@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
 using YtDlpWrapper.Models;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace YtDlpWrapper.Views
 {
@@ -12,7 +14,7 @@ namespace YtDlpWrapper.Views
         private readonly MainViewModel _viewModel;
         private readonly DispatcherTimer _videoTimer;
         private bool _isSliderDragging = false;
-        private VideoInfo _currentVideoSubscribed; // Keep track of the video we're subscribed to
+        private VideoInfo? _currentVideoSubscribed; // Keep track of the video we're subscribed to
 
         public MainWindow()
         {
@@ -81,7 +83,7 @@ namespace YtDlpWrapper.Views
             }
         }
 
-        private void CurrentVideo_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void CurrentVideo_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             // When the Volume property on the VideoInfo object changes, update the player
             if (e.PropertyName == nameof(VideoInfo.Volume))
@@ -190,7 +192,7 @@ namespace YtDlpWrapper.Views
             _viewModel.CurrentVideo.CurrentTime = "00:00:00";
         }
 
-        private void VideoSlider_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void VideoSlider_PreviewMouseLeftButtonDown(object? sender, MouseButtonEventArgs e)
         {
             if (sender is Slider slider)
             {
