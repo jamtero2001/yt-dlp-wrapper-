@@ -1,0 +1,166 @@
+<UserControl x:Class="YtDlpWrapper.Controls.CustomTimeBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="60" d:DesignWidth="800">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Main Time Bar -->
+        <Grid Grid.Row="0" Margin="10,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Current Time -->
+            <TextBlock Grid.Column="0" 
+                       Text="{Binding CurrentTime}" 
+                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                       VerticalAlignment="Center"
+                       Margin="0,0,10,0"
+                       MinWidth="60"/>
+
+            <!-- Progress Bar Container -->
+            <Grid Grid.Column="1" x:Name="ProgressContainer">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Background Track -->
+                <Border Grid.Row="0" 
+                        Background="{DynamicResource MaterialDesignDivider}"
+                        Height="6" 
+                        CornerRadius="3"
+                        VerticalAlignment="Center"/>
+
+                <!-- Progress Fill -->
+                <Border Grid.Row="0" 
+                        Background="{DynamicResource MaterialDesignPrimary}"
+                        Height="6" 
+                        CornerRadius="3"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left"
+                        Width="{Binding ProgressWidth, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
+                <!-- Crop Range Overlay -->
+                <Border Grid.Row="0" 
+                        Background="{DynamicResource MaterialDesignSecondary}"
+                        Height="6" 
+                        CornerRadius="3"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left"
+                        Margin="{Binding CropRangeMargin, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Width="{Binding CropRangeWidth, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Opacity="0.6"/>
+
+                <!-- Playhead -->
+                <Ellipse Grid.Row="0" 
+                         Fill="{DynamicResource MaterialDesignPrimary}"
+                         Width="16" 
+                         Height="16"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Left"
+                         Margin="{Binding PlayheadMargin, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                         x:Name="Playhead"/>
+
+                <!-- Start Thumb -->
+                <Ellipse Grid.Row="0" 
+                         Fill="{DynamicResource MaterialDesignSecondary}"
+                         Width="20" 
+                         Height="20"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Left"
+                         Margin="{Binding StartThumbMargin, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                         x:Name="StartThumb"
+                         Cursor="SizeWE">
+                    <Ellipse.Effect>
+                        <DropShadowEffect Color="Black" Direction="270" ShadowDepth="2" Opacity="0.3"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+
+                <!-- End Thumb -->
+                <Ellipse Grid.Row="0" 
+                         Fill="{DynamicResource MaterialDesignSecondary}"
+                         Width="20" 
+                         Height="20"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Left"
+                         Margin="{Binding EndThumbMargin, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                         x:Name="EndThumb"
+                         Cursor="SizeWE">
+                    <Ellipse.Effect>
+                        <DropShadowEffect Color="Black" Direction="270" ShadowDepth="2" Opacity="0.3"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+
+                <!-- Time Labels -->
+                <Grid Grid.Row="1" Margin="0,5,0,0">
+                    <TextBlock Text="{Binding StartTimeLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               HorizontalAlignment="Left"
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                               Margin="{Binding StartTimeMargin, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                    
+                    <TextBlock Text="{Binding EndTimeLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               HorizontalAlignment="Left"
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                               Margin="{Binding EndTimeMargin, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                </Grid>
+            </Grid>
+
+            <!-- Total Time -->
+            <TextBlock Grid.Column="2" 
+                       Text="{Binding TotalTime}" 
+                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                       VerticalAlignment="Center"
+                       Margin="10,0,0,0"
+                       MinWidth="60"/>
+        </Grid>
+
+        <!-- Control Buttons -->
+        <StackPanel Grid.Row="1" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Center" 
+                    Margin="10,5">
+            
+            <Button Style="{StaticResource MaterialDesignIconButton}"
+                    Command="{Binding PlayPauseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Margin="5,0">
+                <materialDesign:PackIcon Kind="{Binding PlayPauseIcon, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+            </Button>
+
+            <Button Style="{StaticResource MaterialDesignIconButton}"
+                    Command="{Binding StopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Margin="5,0">
+                <materialDesign:PackIcon Kind="Stop"/>
+            </Button>
+
+            <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" 
+                       Margin="10,0"/>
+
+            <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                    Command="{Binding SetStartTimeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Content="Set Start"
+                    Margin="5,0"/>
+
+            <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                    Command="{Binding SetEndTimeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Content="Set End"
+                    Margin="5,0"/>
+
+            <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                    Command="{Binding ResetRangeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Content="Reset"
+                    Margin="5,0"/>
+        </StackPanel>
+    </Grid>
+</UserControl> 

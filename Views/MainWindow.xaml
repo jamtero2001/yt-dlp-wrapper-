@@ -1,0 +1,375 @@
+<Window x:Class="YtDlpWrapper.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:controls="clr-namespace:YtDlpWrapper.Controls"
+        Title="yt-dlp Wrapper" 
+        Height="900" 
+        Width="1200"
+        MinHeight="700"
+        MinWidth="1000"
+        WindowStartupLocation="CenterScreen"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        Background="{DynamicResource MaterialDesignPaper}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        FontFamily="{DynamicResource MaterialDesignFont}">
+
+    <Window.Resources>
+        <Style x:Key="MaterialDesignRaisedButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <materialDesign:ColorZone Grid.Row="0" 
+                                  Mode="PrimaryMid" 
+                                  Padding="16"
+                                  materialDesign:ShadowAssist.ShadowDepth="Depth2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" 
+                            Orientation="Horizontal" 
+                            VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="Video" 
+                                             Width="32" 
+                                             Height="32" 
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,16,0"/>
+                    <TextBlock Text="yt-dlp Wrapper" 
+                               Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" 
+                            Orientation="Horizontal" 
+                            VerticalAlignment="Center">
+                    <TextBlock Text="{Binding DownloadInfo.Status}" 
+                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,16,0"/>
+                    <ProgressBar Width="100" 
+                                 Height="4" 
+                                 Value="{Binding DownloadInfo.Progress}"
+                                 Style="{StaticResource MaterialDesignLinearProgressBar}"/>
+                </StackPanel>
+            </Grid>
+        </materialDesign:ColorZone>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="400"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Download Panel -->
+            <materialDesign:Card Grid.Column="0" 
+                                 Margin="16" 
+                                 Padding="16"
+                                 materialDesign:ShadowAssist.ShadowDepth="Depth1">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- URL Input -->
+                        <TextBlock Text="Video URL" 
+                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                   Margin="0,0,0,8"/>
+                        
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBox Grid.Column="0" 
+                                     Text="{Binding DownloadInfo.Url, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     materialDesign:HintAssist.Hint="Enter video URL"
+                                     Margin="0,0,8,0"/>
+                            
+                            <Button Grid.Column="1" 
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Command="{Binding PasteUrlCommand}"
+                                    Margin="0,0,4,0"
+                                    ToolTip="Paste URL">
+                                <materialDesign:PackIcon Kind="ContentPaste"/>
+                            </Button>
+                            
+                            <Button Grid.Column="2" 
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Command="{Binding ClearUrlCommand}"
+                                    ToolTip="Clear URL">
+                                <materialDesign:PackIcon Kind="Close"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Download & Load Button -->
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                Command="{Binding DownloadAndLoadCommand}"
+                                Content="Download &amp; Load"
+                                IsEnabled="{Binding IsDownloading, Converter={StaticResource InverseBooleanConverter}}"
+                                HorizontalAlignment="Stretch"
+                                Margin="0,0,0,16">
+                            <Button.ContentTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Download" 
+                                                                 Width="16" 
+                                                                 Height="16" 
+                                                                 Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </Button.ContentTemplate>
+                        </Button>
+
+                        <!-- Download Progress -->
+                        <TextBlock Text="Progress" 
+                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                   Margin="0,0,0,8"/>
+                        
+                        <StackPanel Margin="0,0,0,16">
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Column="0" 
+                                           Text="{Binding DownloadInfo.ProgressText}"
+                                           Style="{StaticResource MaterialDesignBody2TextBlock}"/>
+                                
+                                <TextBlock Grid.Column="1" 
+                                           Text="{Binding DownloadInfo.Speed}"
+                                           Style="{StaticResource MaterialDesignBody2TextBlock}"/>
+                            </Grid>
+                            
+                            <ProgressBar Value="{Binding DownloadInfo.Progress}"
+                                         Style="{StaticResource MaterialDesignLinearProgressBar}"
+                                         Height="8"/>
+                        </StackPanel>
+
+                        <!-- Video Location Link -->
+                        <TextBlock Text="Video Location" 
+                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                   Margin="0,0,0,8"/>
+                        
+                        <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Command="{Binding OpenVideoFolderCommand}"
+                                Content="Open Downloads Folder"
+                                HorizontalAlignment="Stretch"
+                                Margin="0,0,0,16">
+                            <Button.ContentTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FolderOpen" 
+                                                                 Width="16" 
+                                                                 Height="16" 
+                                                                 Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </Button.ContentTemplate>
+                        </Button>
+
+                        <!-- Log Output -->
+                        <TextBlock Text="Log Output" 
+                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                   Margin="0,0,0,8"/>
+                        
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <Button Grid.Column="1" 
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Command="{Binding ClearLogCommand}"
+                                    ToolTip="Clear Log">
+                                <materialDesign:PackIcon Kind="Delete"/>
+                            </Button>
+                        </Grid>
+                        
+                        <TextBox Text="{Binding LogOutput}"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 Height="150"
+                                 IsReadOnly="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas"
+                                 FontSize="11"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </materialDesign:Card>
+
+            <!-- Video Player Panel -->
+            <materialDesign:Card Grid.Column="1" 
+                                 Margin="16" 
+                                 Padding="16"
+                                 materialDesign:ShadowAssist.ShadowDepth="Depth1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Video Player Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0" 
+                                   Text="Video Player" 
+                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}"/>
+                        
+                        <Button Grid.Column="1" 
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                Command="{Binding LoadVideoCommand}"
+                                Content="Load Video">
+                            <Button.ContentTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FolderOpen" 
+                                                                 Width="16" 
+                                                                 Height="16" 
+                                                                 Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </Button.ContentTemplate>
+                        </Button>
+                    </Grid>
+
+                    <!-- Video Display -->
+                    <Border Grid.Row="1" 
+                            Background="{DynamicResource MaterialDesignDivider}"
+                            BorderBrush="{DynamicResource MaterialDesignDivider}"
+                            BorderThickness="1"
+                            Margin="0,0,0,16">
+                        
+                        <Grid>
+                            <MediaElement x:Name="VideoPlayer"
+                                          LoadedBehavior="Manual"
+                                          UnloadedBehavior="Stop"
+                                          Stretch="Uniform"
+                                          MediaOpened="VideoPlayer_MediaOpened"
+                                          MediaFailed="VideoPlayer_MediaFailed"/>
+                            
+                            <!-- No Video Placeholder -->
+                            <StackPanel VerticalAlignment="Center" 
+                                        HorizontalAlignment="Center"
+                                        Visibility="{Binding CurrentVideo.FilePath, Converter={StaticResource StringToVisibilityConverter}}">
+                                <materialDesign:PackIcon Kind="VideoOff" 
+                                                         Width="64" 
+                                                         Height="64" 
+                                                         Opacity="0.3"
+                                                         Margin="0,0,0,16"/>
+                                <TextBlock Text="No video loaded" 
+                                           Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                           Opacity="0.5"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Simple Video Controls -->
+                    <Grid Grid.Row="2" Margin="0,10,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Time Display -->
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" 
+                                       Text="{Binding CurrentVideo.CurrentTime}"
+                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                       MinWidth="60"/>
+                            
+                            <Slider Grid.Column="1" 
+                                    x:Name="VideoSlider"
+                                    Minimum="0"
+                                    Maximum="{Binding CurrentVideo.TotalDurationSeconds}"
+                                    Value="{Binding CurrentVideo.CurrentPositionSeconds}"
+                                    Margin="10,0"
+                                    Thumb.DragStarted="VideoSlider_DragStarted"
+                                    Thumb.DragCompleted="VideoSlider_DragCompleted"
+                                    PreviewMouseLeftButtonDown="VideoSlider_PreviewMouseLeftButtonDown"/>
+                            
+                            <TextBlock Grid.Column="2" 
+                                       Text="{Binding CurrentVideo.Duration}"
+                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                       MinWidth="60"/>
+                        </Grid>
+                        
+                        <!-- Control Buttons -->
+                        <StackPanel Grid.Row="1" 
+                                    Orientation="Horizontal" 
+                                    HorizontalAlignment="Center">
+                            
+                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                    x:Name="PlayPauseButton"
+                                    Click="PlayPauseButton_Click"
+                                    Margin="5,0">
+                                <materialDesign:PackIcon Kind="Play"/>
+                            </Button>
+
+                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                    Click="StopButton_Click"
+                                    Margin="5,0">
+                                <materialDesign:PackIcon Kind="Stop"/>
+                            </Button>
+
+                            <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" 
+                                       Margin="10,0"/>
+
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Command="{Binding SetCropStartCommand}"
+                                    Content="Set Start"
+                                    Margin="5,0"/>
+
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Command="{Binding SetCropEndCommand}"
+                                    Content="Set End"
+                                    Margin="5,0"/>
+
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Command="{Binding CropVideoCommand}"
+                                    Content="Crop &amp; Export"
+                                    IsEnabled="{Binding CropRange.IsValid}"
+                                    Margin="5,0"/>
+                        </StackPanel>
+
+                        <!-- Volume Slider -->
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                            <materialDesign:PackIcon Kind="VolumeHigh" Width="24" Height="24" Margin="0,0,8,0"/>
+                            <Slider Minimum="0" Maximum="1" Value="{Binding CurrentVideo.Volume, Mode=TwoWay}" Width="120"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </materialDesign:Card>
+        </Grid>
+    </Grid>
+</Window> 
