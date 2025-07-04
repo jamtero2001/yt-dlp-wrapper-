@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <!-- <ApplicationIcon>icon.ico</ApplicationIcon> -->
+    <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyTitle>YT-DLP Wrapper</AssemblyTitle>
     <AssemblyDescription>Modern Video Downloader with SwarmAI-inspired design</AssemblyDescription>
     <AssemblyProduct>YT-DLP Wrapper</AssemblyProduct>
