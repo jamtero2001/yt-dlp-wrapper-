@@ -1,0 +1,344 @@
+<Window x:Class="YtDlpWrapper.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="✨ YT-DLP Wrapper - Modern Video Downloader" 
+        Height="720" 
+        Width="1280"
+        WindowStartupLocation="CenterScreen"
+        MinHeight="600"
+        MinWidth="900"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        ResizeMode="CanResize">
+    
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#0A0A0A" Offset="0"/>
+            <GradientStop Color="#1A1A1A" Offset="0.5"/>
+            <GradientStop Color="#252525" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Background>
+    
+    <Window.Effect>
+        <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="15" Opacity="0.6"/>
+    </Window.Effect>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" 
+                Background="Transparent" 
+                Height="40" 
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Title -->
+                <StackPanel Grid.Column="0" 
+                            Orientation="Horizontal" 
+                            VerticalAlignment="Center" 
+                            Margin="20,0,0,0">
+                    <TextBlock Text="✨" 
+                               FontSize="16" 
+                               VerticalAlignment="Center" 
+                               Margin="0,0,8,0"/>
+                    <TextBlock Text="YT-DLP Wrapper" 
+                               Style="{StaticResource SubtitleTextStyle}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="Modern Video Downloader" 
+                               Style="{StaticResource SecondaryTextStyle}"
+                               FontSize="11"
+                               VerticalAlignment="Center" 
+                               Margin="10,0,0,0"/>
+                </StackPanel>
+                
+                <!-- Window Controls -->
+                <StackPanel Grid.Column="1" 
+                            Orientation="Horizontal" 
+                            Margin="0,0,10,0">
+                    <Button x:Name="MinimizeButton" 
+                            Content="🗕" 
+                            Width="30" 
+                            Height="30" 
+                            Background="Transparent" 
+                            Foreground="{StaticResource TextSecondaryColor}" 
+                            BorderThickness="0" 
+                            FontSize="12"
+                            Click="MinimizeButton_Click"/>
+                    <Button x:Name="MaximizeButton" 
+                            Content="🗖" 
+                            Width="30" 
+                            Height="30" 
+                            Background="Transparent" 
+                            Foreground="{StaticResource TextSecondaryColor}" 
+                            BorderThickness="0" 
+                            FontSize="12"
+                            Click="MaximizeButton_Click"/>
+                    <Button x:Name="CloseButton" 
+                            Content="✕" 
+                            Width="30" 
+                            Height="30" 
+                            Background="Transparent" 
+                            Foreground="{StaticResource ErrorColor}" 
+                            BorderThickness="0" 
+                            FontSize="12"
+                            Click="CloseButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="350"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+        
+        <!-- Top Section: Log Output and Video Player Side by Side -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="1.5*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Log Output Section (Left side) -->
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,5,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" 
+                               Text="Log Output &amp; Progress" 
+                               Style="{StaticResource SubtitleTextStyle}"
+                               Margin="0,0,0,10"/>
+                    
+                    <ScrollViewer Grid.Row="1" 
+                                  VerticalScrollBarVisibility="Auto" 
+                                  HorizontalScrollBarVisibility="Auto">
+                        <TextBox x:Name="LogOutput" 
+                                 IsReadOnly="True" 
+                                 Background="Transparent" 
+                                 BorderThickness="0" 
+                                 Foreground="{StaticResource TextSecondaryColor}" 
+                                 FontFamily="Consolas" 
+                                 FontSize="11" 
+                                 Text="Welcome to YT-DLP Wrapper! Paste a video URL and click 'Load Video' to preview, then choose quality to download..." 
+                                 TextWrapping="Wrap"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+            
+            <!-- Video Player Section (Right side) -->
+            <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="5,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" 
+                               Text="Video Preview" 
+                               Style="{StaticResource SubtitleTextStyle}"
+                               Margin="0,0,0,10"/>
+                    
+                    <!-- YouTube Player -->
+                    <Border Grid.Row="1" 
+                            Background="{StaticResource SurfaceColor}" 
+                            CornerRadius="8" 
+                            Height="260">
+                        <wv2:WebView2 x:Name="YouTubePlayer" 
+                                      NavigationCompleted="YouTubePlayer_NavigationCompleted"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- URL Input Section -->
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Row="0" 
+                           Grid.ColumnSpan="2" 
+                           Text="Video URL" 
+                           Style="{StaticResource SubtitleTextStyle}"
+                           Margin="0,0,0,10"/>
+                
+                <TextBox x:Name="UrlInput" 
+                         Grid.Row="1" 
+                         Grid.Column="0" 
+                         Style="{StaticResource ModernTextBoxStyle}" 
+                         Margin="0,0,10,0" 
+                         FontSize="14"
+                         Text=""/>
+                
+                <Button x:Name="LoadButton" 
+                        Grid.Row="1" 
+                        Grid.Column="1" 
+                        Style="{StaticResource ModernButtonStyle}" 
+                        Content="🎬 Load Video" 
+                        Width="140" 
+                        Click="LoadButton_Click"/>
+            </Grid>
+        </Border>
+
+        <!-- Download Quality Panel (Shown after loading) -->
+        <Border Grid.Row="2" 
+                x:Name="QualitySelectionPanel"
+                Style="{StaticResource CardStyle}"
+                Visibility="Collapsed"
+                Margin="0,10,0,10"
+                BorderThickness="2">
+            <Border.BorderBrush>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#FF6B35" Offset="0"/>
+                    <GradientStop Color="#FF8C69" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.BorderBrush>
+            <Border.Effect>
+                <DropShadowEffect Color="#FF6B35" BlurRadius="25" ShadowDepth="0" Opacity="0.4"/>
+            </Border.Effect>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <TextBlock Grid.Row="0" 
+                           Text="📥 Download Quality Selection" 
+                           Style="{StaticResource SubtitleTextStyle}"
+                           Margin="0,0,0,15"/>
+                
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBlock Grid.Column="0" 
+                               Text="Quality:" 
+                               Style="{StaticResource SecondaryTextStyle}"
+                               VerticalAlignment="Center" 
+                               Margin="0,0,15,0"/>
+                    
+                    <ComboBox x:Name="QualitySelector" 
+                              Grid.Column="1"
+                              Style="{StaticResource ModernComboBoxStyle}" 
+                              SelectedIndex="4"
+                              Margin="0,0,15,0">
+                        <ComboBoxItem Content="🔥 Best Available"/>
+                        <ComboBoxItem Content="📺 2160p (4K)"/>
+                        <ComboBoxItem Content="🎬 1440p (2K)"/>
+                        <ComboBoxItem Content="📹 1080p (FHD)"/>
+                        <ComboBoxItem Content="🎥 720p (HD)"/>
+                        <ComboBoxItem Content="📱 480p"/>
+                        <ComboBoxItem Content="💾 360p"/>
+                        <ComboBoxItem Content="📞 240p"/>
+                        <ComboBoxItem Content="⚡ 144p"/>
+                    </ComboBox>
+                    
+                    <Button x:Name="DownloadButton" 
+                            Grid.Column="2"
+                            Style="{StaticResource ModernButtonStyle}" 
+                            Content="📥 Download Now" 
+                            Width="160"
+                            Click="DownloadButton_Click"/>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Action Buttons Section -->
+        <Border Grid.Row="3" Style="{StaticResource CardStyle}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <TextBlock Grid.Row="0" 
+                           Text="File Management" 
+                           Style="{StaticResource SubtitleTextStyle}"
+                           Margin="0,0,0,15"/>
+                
+                <!-- Action Buttons Row -->
+                <StackPanel Grid.Row="1" 
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Center" 
+                            Margin="0,0,0,15">
+                    <Button x:Name="OpenDownloadsButton" 
+                            Style="{StaticResource ModernButtonStyle}" 
+                            Content="📁 Show Downloads Folder" 
+                            Margin="0,0,15,0" 
+                            Click="OpenDownloadsButton_Click">
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#2ED573" Offset="0"/>
+                                <GradientStop Color="#7BED9F" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Button.Background>
+                    </Button>
+                    <Button x:Name="ClearVideoButton" 
+                            Style="{StaticResource ModernButtonStyle}" 
+                            Content="🗑️ Clear Video" 
+                            Margin="15,0,15,0" 
+                            Click="ClearVideoButton_Click">
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#FF6B35" Offset="0"/>
+                                <GradientStop Color="#FF8C69" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Button.Background>
+                    </Button>
+                    <Button x:Name="ClearTempButton" 
+                            Style="{StaticResource ModernButtonStyle}" 
+                            Content="🗑️ Clear Temp Files" 
+                            Margin="15,0,0,0"
+                            Click="ClearTempButton_Click">
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#404040" Offset="0"/>
+                                <GradientStop Color="#2A2A2A" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Button.Background>
+                    </Button>
+                </StackPanel>
+                
+                <!-- Enhanced Progress Bar with Animation -->
+                <ProgressBar x:Name="ProgressBar" 
+                             Grid.Row="2" 
+                             Style="{StaticResource ModernProgressBarStyle}"
+                             Height="12" 
+                             Margin="10,15,10,0" 
+                             Visibility="Collapsed">
+                    <ProgressBar.RenderTransform>
+                        <TranslateTransform/>
+                    </ProgressBar.RenderTransform>
+                </ProgressBar>
+            </Grid>
+        </Border>
+        
+        </Grid>
+    </Grid>
+</Window> 

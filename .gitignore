@@ -1,0 +1,44 @@
+# Build outputs
+bin/
+obj/
+dist/
+build-temp/
+
+# Large dependencies (users download these separately)
+yt-dlp.exe
+ffmpeg.exe
+
+# User generated content
+downloads/
+temp/
+*.log
+error.log
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.cache
+
+# .NET
+*.dll
+*.exe
+*.pdb
+!icon.ico
+
+# Temporary files
+*.tmp
+*.temp
+Thumbs.db
+.DS_Store
+
+# WebView2 runtime cache
+*.WebView2/
+
+# NuGet
+packages/
+*.nupkg
+
+# Rider
+.idea/ 
