@@ -145,15 +145,15 @@ namespace YtDlpWrapper
             return selectedQuality switch
             {
                 "🔥 Best Available" => "bv*[ext=mp4]+ba[ext=m4a]/bv*+ba/b[ext=mp4]/best",
-                "📺 2160p (4K)" => "bv[height<=2160][ext=mp4]+ba[ext=m4a]/bv[height<=2160]+ba/b[height<=2160][ext=mp4]",
-                "🎬 1440p (2K)" => "bv[height<=1440][ext=mp4]+ba[ext=m4a]/bv[height<=1440]+ba/b[height<=1440][ext=mp4]", 
-                "📹 1080p (FHD)" => "bv[height<=1080][ext=mp4]+ba[ext=m4a]/bv[height<=1080]+ba/b[height<=1080][ext=mp4]",
-                "🎥 720p (HD)" => "bv[height<=720][ext=mp4]+ba[ext=m4a]/bv[height<=720]+ba/b[height<=720][ext=mp4]",
-                "📱 480p" => "bv[height<=480][ext=mp4]+ba[ext=m4a]/bv[height<=480]+ba/b[height<=480][ext=mp4]",
-                "💾 360p" => "bv[height<=360][ext=mp4]+ba[ext=m4a]/bv[height<=360]+ba/b[height<=360][ext=mp4]",
-                "📞 240p" => "bv[height<=240][ext=mp4]+ba[ext=m4a]/bv[height<=240]+ba/b[height<=240][ext=mp4]",
-                "⚡ 144p" => "bv[height<=144][ext=mp4]+ba[ext=m4a]/bv[height<=144]+ba/b[height<=144][ext=mp4]",
-                _ => "bv[height<=720][ext=mp4]+ba[ext=m4a]/bv[height<=720]+ba/b[height<=720][ext=mp4]" // Default fallback
+                "📺 2160p (4K)" => "bv[height<=2160]+ba/bv[height<=2160][ext=mp4]+ba[ext=m4a]/b[height<=2160][ext=mp4]",
+                "🎬 1440p (2K)" => "bv[height<=1440]+ba/bv[height<=1440][ext=mp4]+ba[ext=m4a]/b[height<=1440][ext=mp4]", 
+                "📹 1080p (FHD)" => "bv[height<=1080]+ba/bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080][ext=mp4]",
+                "🎥 720p (HD)" => "bv[height<=720]+ba/bv[height<=720][ext=mp4]+ba[ext=m4a]/b[height<=720][ext=mp4]",
+                "📱 480p" => "bv[height<=480]+ba/bv[height<=480][ext=mp4]+ba[ext=m4a]/b[height<=480][ext=mp4]",
+                "💾 360p" => "bv[height<=360]+ba/bv[height<=360][ext=mp4]+ba[ext=m4a]/b[height<=360][ext=mp4]",
+                "📞 240p" => "bv[height<=240]+ba/bv[height<=240][ext=mp4]+ba[ext=m4a]/b[height<=240][ext=mp4]",
+                "⚡ 144p" => "bv[height<=144]+ba/bv[height<=144][ext=mp4]+ba[ext=m4a]/b[height<=144][ext=mp4]",
+                _ => "bv[height<=720]+ba/bv[height<=720][ext=mp4]+ba[ext=m4a]/b[height<=720][ext=mp4]" // Default fallback
             };
         }
 
