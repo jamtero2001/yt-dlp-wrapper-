@@ -120,8 +120,9 @@ namespace YtDlpWrapper
                         {
                             if (YouTubePlayer.Source != null)
                             {
-                                YouTubePlayer.Source = null;
-                                await Task.Delay(50); // Brief pause for cleanup
+                                // Navigate to blank page to stop all media playback
+                                YouTubePlayer.Source = new Uri("about:blank");
+                                await Task.Delay(100); // Brief pause for cleanup
                                 LogMessage("🧹 Previous video cleared");
                             }
                         }
@@ -137,6 +138,9 @@ namespace YtDlpWrapper
                     
                     var embedUrl = $"https://www.youtube.com/embed/{videoId}?autoplay=0&controls=1&modestbranding=1&rel=0";
                     YouTubePlayer.Source = new Uri(embedUrl);
+                    
+                    // Show the video preview section
+                    VideoPreviewSection.Visibility = Visibility.Visible;
                     LogMessage($"✅ YouTube video loaded successfully!");
                 }
                 else
@@ -428,6 +432,9 @@ namespace YtDlpWrapper
                 {
                     LogMessage($"🔗 Non-YouTube URL detected: {url}");
                     LogMessage("Preview not available for this URL, but you can still download it.");
+                    
+                    // Keep video preview hidden for non-YouTube URLs
+                    VideoPreviewSection.Visibility = Visibility.Collapsed;
                 }
 
                 // Fetch available formats
@@ -719,7 +726,7 @@ namespace YtDlpWrapper
             }
         }
 
-        private void ClearVideoButton_Click(object sender, RoutedEventArgs e)
+        private async void ClearVideoButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -733,10 +740,15 @@ namespace YtDlpWrapper
                 _availableFormats.Clear();
                 QualitySelector.Items.Clear();
                 
-                // Clear YouTube player
+                // Clear YouTube player and hide preview section
                 try
                 {
-                    YouTubePlayer.Source = null;
+                    // Navigate to blank page to stop all media playback
+                    YouTubePlayer.Source = new Uri("about:blank");
+                    await Task.Delay(100); // Small delay to ensure navigation completes
+                    
+                    // Hide the preview section
+                    VideoPreviewSection.Visibility = Visibility.Collapsed;
                 }
                 catch (Exception)
                 {
@@ -846,6 +858,11 @@ namespace YtDlpWrapper
         {
             try
             {
+                // Stop any playing video before closing
+                if (YouTubePlayer?.Source != null)
+                {
+                    YouTubePlayer.Source = new Uri("about:blank");
+                }
                 YouTubePlayer?.Dispose();
             }
             catch { /* Ignore disposal errors */ }

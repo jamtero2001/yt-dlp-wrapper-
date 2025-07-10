@@ -172,7 +172,7 @@
             </Border>
             
             <!-- Video Player Section (Right side) -->
-            <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="5,0,0,0">
+            <Border x:Name="VideoPreviewSection" Grid.Column="2" Style="{StaticResource CardStyle}" Margin="5,0,0,0" Visibility="Collapsed">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
