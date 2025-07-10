@@ -7,14 +7,13 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyTitle>YT-DLP Wrapper</AssemblyTitle>
     <AssemblyDescription>Modern Video Downloader with SwarmAI-inspired design</AssemblyDescription>
     <AssemblyProduct>YT-DLP Wrapper</AssemblyProduct>
-    <AssemblyCompany>Your Company</AssemblyCompany>
-    <AssemblyCopyright>Copyright © 2024</AssemblyCopyright>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyCompany>JAMT</AssemblyCompany>
+    <AssemblyCopyright>Copyright © 2024 JAMT</AssemblyCopyright>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
