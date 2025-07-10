@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -851,5 +852,88 @@ namespace YtDlpWrapper
             
             base.OnClosed(e);
         }
+
+        #region Window Resize Functionality
+
+        private void ResizeBorder_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            var border = sender as Border;
+            if (border != null)
+            {
+                border.Background = System.Windows.Media.Brushes.Transparent;
+            }
+        }
+
+        private void ResizeBorder_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            var border = sender as Border;
+            if (border != null)
+            {
+                border.Background = System.Windows.Media.Brushes.Transparent;
+            }
+        }
+
+        private void ResizeBorder_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var border = sender as Border;
+            if (border == null) return;
+
+            // Determine resize direction based on border name
+            if (border.Name == "ResizeBorderTop")
+                DragResizeWindow(ResizeDirection.Top);
+            else if (border.Name == "ResizeBorderBottom")
+                DragResizeWindow(ResizeDirection.Bottom);
+            else if (border.Name == "ResizeBorderLeft")
+                DragResizeWindow(ResizeDirection.Left);
+            else if (border.Name == "ResizeBorderRight")
+                DragResizeWindow(ResizeDirection.Right);
+        }
+
+        private void ResizeGrip_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var border = sender as Border;
+            if (border == null) return;
+
+            // Determine resize direction based on grip name
+            if (border.Name == "ResizeGripTopLeft")
+                DragResizeWindow(ResizeDirection.TopLeft);
+            else if (border.Name == "ResizeGripTopRight")
+                DragResizeWindow(ResizeDirection.TopRight);
+            else if (border.Name == "ResizeGripBottomLeft")
+                DragResizeWindow(ResizeDirection.BottomLeft);
+            else if (border.Name == "ResizeGripBottomRight")
+                DragResizeWindow(ResizeDirection.BottomRight);
+        }
+
+        private void DragResizeWindow(ResizeDirection direction)
+        {
+            try
+            {
+                var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                var wParam = (IntPtr)(0xF000 | (int)direction);
+                SendMessage(hwnd, 0x112, wParam, IntPtr.Zero);
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Resize error: {ex.Message}");
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+        private enum ResizeDirection
+        {
+            Left = 1,
+            Right = 2,
+            Top = 3,
+            TopLeft = 4,
+            TopRight = 5,
+            Bottom = 6,
+            BottomLeft = 7,
+            BottomRight = 8,
+        }
+
+        #endregion
     }
 } 

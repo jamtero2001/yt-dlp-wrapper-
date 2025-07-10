@@ -30,6 +30,34 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         
+        <!-- Resize Borders -->
+        <Border x:Name="ResizeBorderTop" Height="5" VerticalAlignment="Top" Background="Transparent" 
+                MouseEnter="ResizeBorder_MouseEnter" MouseLeave="ResizeBorder_MouseLeave" 
+                MouseLeftButtonDown="ResizeBorder_MouseLeftButtonDown" Grid.RowSpan="2" Cursor="SizeNS"/>
+        <Border x:Name="ResizeBorderBottom" Height="5" VerticalAlignment="Bottom" Background="Transparent" 
+                MouseEnter="ResizeBorder_MouseEnter" MouseLeave="ResizeBorder_MouseLeave" 
+                MouseLeftButtonDown="ResizeBorder_MouseLeftButtonDown" Grid.RowSpan="2" Cursor="SizeNS"/>
+        <Border x:Name="ResizeBorderLeft" Width="5" HorizontalAlignment="Left" Background="Transparent" 
+                MouseEnter="ResizeBorder_MouseEnter" MouseLeave="ResizeBorder_MouseLeave" 
+                MouseLeftButtonDown="ResizeBorder_MouseLeftButtonDown" Grid.RowSpan="2" Cursor="SizeWE"/>
+        <Border x:Name="ResizeBorderRight" Width="5" HorizontalAlignment="Right" Background="Transparent" 
+                MouseEnter="ResizeBorder_MouseEnter" MouseLeave="ResizeBorder_MouseLeave" 
+                MouseLeftButtonDown="ResizeBorder_MouseLeftButtonDown" Grid.RowSpan="2" Cursor="SizeWE"/>
+        
+        <!-- Corner Resize Grips -->
+        <Border x:Name="ResizeGripTopLeft" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" 
+                Background="Transparent" MouseLeftButtonDown="ResizeGrip_MouseLeftButtonDown" 
+                Grid.RowSpan="2" Cursor="SizeNWSE"/>
+        <Border x:Name="ResizeGripTopRight" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" 
+                Background="Transparent" MouseLeftButtonDown="ResizeGrip_MouseLeftButtonDown" 
+                Grid.RowSpan="2" Cursor="SizeNESW"/>
+        <Border x:Name="ResizeGripBottomLeft" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Bottom" 
+                Background="Transparent" MouseLeftButtonDown="ResizeGrip_MouseLeftButtonDown" 
+                Grid.RowSpan="2" Cursor="SizeNESW"/>
+        <Border x:Name="ResizeGripBottomRight" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                Background="Transparent" MouseLeftButtonDown="ResizeGrip_MouseLeftButtonDown" 
+                Grid.RowSpan="2" Cursor="SizeNWSE"/>
+        
         <!-- Custom Title Bar -->
         <Border Grid.Row="0" 
                 Background="Transparent" 
@@ -45,11 +73,13 @@
                 <StackPanel Grid.Column="0" 
                             Orientation="Horizontal" 
                             VerticalAlignment="Center" 
-                            Margin="20,0,0,0">
-                    <TextBlock Text="✨" 
-                               FontSize="16" 
-                               VerticalAlignment="Center" 
-                               Margin="0,0,8,0"/>
+                            Margin="15,0,0,0">
+                    <!-- App Icon -->
+                    <Image Source="pack://application:,,,/icon.ico" 
+                           Width="20" 
+                           Height="20" 
+                           VerticalAlignment="Center" 
+                           Margin="0,0,10,0"/>
                     <TextBlock Text="YT-DLP Wrapper" 
                                Style="{StaticResource SubtitleTextStyle}"
                                VerticalAlignment="Center"/>
@@ -98,7 +128,7 @@
         <!-- Main Content -->
         <Grid Grid.Row="1" Margin="20">
             <Grid.RowDefinitions>
-                <RowDefinition Height="350"/>
+                <RowDefinition Height="2*"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -157,17 +187,19 @@
                     <!-- YouTube Player -->
                     <Border Grid.Row="1" 
                             Background="{StaticResource SurfaceColor}" 
-                            CornerRadius="8" 
-                            Height="260">
+                            CornerRadius="8">
                         <wv2:WebView2 x:Name="YouTubePlayer" 
-                                      NavigationCompleted="YouTubePlayer_NavigationCompleted"/>
+                                      NavigationCompleted="YouTubePlayer_NavigationCompleted"
+                                      Margin="5"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"/>
                     </Border>
                 </Grid>
             </Border>
         </Grid>
 
         <!-- URL Input Section -->
-        <Border Grid.Row="1" Style="{StaticResource CardStyle}">
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,15,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -269,7 +301,7 @@
         </Border>
 
         <!-- Action Buttons Section -->
-        <Border Grid.Row="3" Style="{StaticResource CardStyle}">
+        <Border Grid.Row="3" Style="{StaticResource CardStyle}" Margin="0,15,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -283,14 +315,15 @@
                            Margin="0,0,0,15"/>
                 
                 <!-- Action Buttons Row -->
-                <StackPanel Grid.Row="1" 
-                            Orientation="Horizontal" 
+                <UniformGrid Grid.Row="1" 
+                            Rows="1" 
+                            Columns="3"
                             HorizontalAlignment="Center" 
                             Margin="0,0,0,15">
                     <Button x:Name="OpenDownloadsButton" 
                             Style="{StaticResource ModernButtonStyle}" 
                             Content="📁 Show Downloads Folder" 
-                            Margin="0,0,15,0" 
+                            Margin="5" 
                             Click="OpenDownloadsButton_Click">
                         <Button.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -302,7 +335,7 @@
                     <Button x:Name="ClearVideoButton" 
                             Style="{StaticResource ModernButtonStyle}" 
                             Content="🗑️ Clear Video" 
-                            Margin="15,0,15,0" 
+                            Margin="5" 
                             Click="ClearVideoButton_Click">
                         <Button.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -314,7 +347,7 @@
                     <Button x:Name="ClearTempButton" 
                             Style="{StaticResource ModernButtonStyle}" 
                             Content="🗑️ Clear Temp Files" 
-                            Margin="15,0,0,0"
+                            Margin="5"
                             Click="ClearTempButton_Click">
                         <Button.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -323,7 +356,7 @@
                             </LinearGradientBrush>
                         </Button.Background>
                     </Button>
-                </StackPanel>
+                </UniformGrid>
                 
                 <!-- Enhanced Progress Bar with Animation -->
                 <ProgressBar x:Name="ProgressBar" 

@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyTitle>YT-DLP Wrapper</AssemblyTitle>
     <AssemblyDescription>Modern Video Downloader with SwarmAI-inspired design</AssemblyDescription>
     <AssemblyProduct>YT-DLP Wrapper</AssemblyProduct>
@@ -26,6 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="icon.ico" />
+    <None Include="icon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="yt-dlp.exe" Condition="Exists('yt-dlp.exe')">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
