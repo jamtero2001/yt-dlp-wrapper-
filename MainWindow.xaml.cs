@@ -12,6 +12,9 @@ using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Collections.Concurrent;
+using System.Windows.Threading;
+using System.Text;
 
 namespace YtDlpWrapper
 {
@@ -57,7 +60,9 @@ namespace YtDlpWrapper
         private readonly string _downloadsDirectory;
         private bool _isFirstVideoLoad = true;
         private List<YtDlpFormat> _availableFormats = new();
-
+        private readonly ConcurrentQueue<string> _ytDlpLogQueue = new();
+        private readonly DispatcherTimer _logUpdateTimer = new();
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -74,6 +79,9 @@ namespace YtDlpWrapper
             // Populate quality selector on startup
             PopulateQualitySelector();
             
+            _logUpdateTimer.Interval = TimeSpan.FromMilliseconds(200);
+            _logUpdateTimer.Tick += LogUpdateTimer_Tick;
+
             LogMessage("YT-DLP Wrapper started successfully!");
             LogMessage("Simple workflow: 1) Load video for preview → 2) Choose quality → 3) Download");
             LogMessage($"Downloads will be saved to: {_downloadsDirectory}");
@@ -97,10 +105,24 @@ namespace YtDlpWrapper
         {
             Dispatcher.Invoke(() =>
             {
-                var timestamp = DateTime.Now.ToString("HH:mm:ss");
-                LogOutput.Text += $"[{timestamp}] {message}\n";
+                var formattedMessage = $"[{DateTime.Now:HH:mm:ss}] {message}\n";
+                LogOutput.AppendText(formattedMessage);
                 LogOutput.ScrollToEnd();
             });
+        }
+
+        private void LogUpdateTimer_Tick(object? sender, EventArgs e)
+        {
+            if (_ytDlpLogQueue.IsEmpty) return;
+
+            var sb = new StringBuilder();
+            while (_ytDlpLogQueue.TryDequeue(out var line))
+            {
+                sb.AppendLine(line);
+            }
+            
+            LogOutput.AppendText(sb.ToString());
+            LogOutput.ScrollToEnd();
         }
 
         private bool IsYouTubeUrl(string url)
@@ -266,7 +288,6 @@ namespace YtDlpWrapper
                 // Create a dictionary of quality labels and their corresponding resolution values
                 var qualityLevels = new Dictionary<string, int>
                 {
-                    { "🔥 Best Available", 9999 }, // Always show "Best Available"
                     { "📺 4K (2160p)", 2160 }, { "🎬 1440p (2K)", 1440 },
                     { "📹 1080p (FHD)", 1080 }, { "🎥 720p (HD)", 720 },
                     { "📱 480p", 480 }, { "💾 360p", 360 }
@@ -280,10 +301,9 @@ namespace YtDlpWrapper
                 // Add quality options that are available for the current video
                 foreach (var level in qualityLevels)
                 {
-                    if (level.Value == 9999 || level.Value <= maxHeight)
+                    if (level.Value <= maxHeight)
                     {
-                        var tagValue = level.Value == 9999 ? "best" : level.Value.ToString();
-                        QualitySelector.Items.Add(new ComboBoxItem { Content = level.Key, Tag = tagValue });
+                        QualitySelector.Items.Add(new ComboBoxItem { Content = level.Key, Tag = level.Value.ToString() });
                     }
                 }
 
@@ -291,7 +311,7 @@ namespace YtDlpWrapper
                 QualitySelector.Items.Add(new ComboBoxItem { Content = "--- Audio Only ---", IsEnabled = false });
                 QualitySelector.Items.Add(new ComboBoxItem { Content = "🎵 Best Audio (m4a)", Tag = "bestaudio[ext=m4a]" });
                 
-                QualitySelector.SelectedIndex = 0; // Default to Best Available
+                QualitySelector.SelectedIndex = 0; // Default to the highest available quality
                 LogMessage("✅ Dynamic quality options populated.");
             });
         }
@@ -407,11 +427,6 @@ namespace YtDlpWrapper
                 // Handle audio-only selection
                 formatArgument = selectionTag;
             }
-            else if (selectionTag == "best")
-            {
-                // Handle "Best Available" selection
-                formatArgument = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best";
-            }
             else
             {
                 // Handle resolution-based selection
@@ -443,16 +458,17 @@ namespace YtDlpWrapper
             };
 
             LogMessage($"Executing yt-dlp: yt-dlp {argumentString}");
+            _logUpdateTimer.Start();
 
             using (var process = new Process { StartInfo = processInfo })
             {
                 process.OutputDataReceived += (s, args) =>
                 {
-                    if (!string.IsNullOrEmpty(args.Data)) LogMessage($"yt-dlp: {args.Data}");
+                    if (!string.IsNullOrEmpty(args.Data)) _ytDlpLogQueue.Enqueue($"yt-dlp: {args.Data}");
                 };
                 process.ErrorDataReceived += (s, args) =>
                 {
-                    if (!string.IsNullOrEmpty(args.Data)) LogMessage($"yt-dlp Error: {args.Data}");
+                    if (!string.IsNullOrEmpty(args.Data)) _ytDlpLogQueue.Enqueue($"yt-dlp Error: {args.Data}");
                 };
 
                 process.Start();
@@ -460,6 +476,8 @@ namespace YtDlpWrapper
                 process.BeginErrorReadLine();
 
                 await Task.Run(() => process.WaitForExit());
+                _logUpdateTimer.Stop();
+                LogUpdateTimer_Tick(null, EventArgs.Empty); // Final flush of logs
 
                 if (process.ExitCode == 0)
                 {
