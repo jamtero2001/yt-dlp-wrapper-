@@ -10,21 +10,45 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace YtDlpWrapper
 {
-    public class VideoFormat
+    public class YtDlpFormat
     {
-        public string Id { get; set; } = "";
+        [JsonPropertyName("format_id")]
+        public string FormatId { get; set; } = "";
+
+        [JsonPropertyName("ext")]
         public string Extension { get; set; } = "";
+
+        [JsonPropertyName("resolution")]
         public string Resolution { get; set; } = "";
-        public string Note { get; set; } = "";
-        public string FileSize { get; set; } = "";
-        public string DisplayName { get; set; } = "";
-        public bool HasVideo { get; set; }
-        public bool HasAudio { get; set; }
-        public int Height { get; set; }
-        public string Codec { get; set; } = "";
+
+        [JsonPropertyName("format_note")]
+        public string FormatNote { get; set; } = "";
+
+        [JsonPropertyName("filesize")]
+        public long? Filesize { get; set; }
+        
+        [JsonPropertyName("vcodec")]
+        public string Vcodec { get; set; } = "none";
+
+        [JsonPropertyName("acodec")]
+        public string Acodec { get; set; } = "none";
+        
+        [JsonPropertyName("height")]
+        public int? Height { get; set; }
+
+        public bool HasVideo => Vcodec != "none";
+        public bool HasAudio => Acodec != "none";
+    }
+
+    public class YtDlpVideoInfo
+    {
+        [JsonPropertyName("formats")]
+        public List<YtDlpFormat> Formats { get; set; } = new();
     }
 
     public partial class MainWindow : Window
@@ -32,23 +56,24 @@ namespace YtDlpWrapper
         private readonly string _tempDirectory;
         private readonly string _downloadsDirectory;
         private bool _isFirstVideoLoad = true;
-        private List<VideoFormat> _availableFormats = new List<VideoFormat>();
+        private List<YtDlpFormat> _availableFormats = new();
 
         public MainWindow()
         {
             InitializeComponent();
-
-            // Set up directories in user-writable locations
-            var userDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "YT-DLP Wrapper");
-            _tempDirectory = Path.Combine(userDataPath, "temp");
-            _downloadsDirectory = Path.Combine(userDataPath, "downloads");
+            InitializeWebView();
             
+            // Set up directories
+            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var appDirectory = Path.Combine(appDataPath, "YT-DLP Wrapper");
+            _tempDirectory = Path.Combine(appDirectory, "temp");
+            _downloadsDirectory = Path.Combine(appDirectory, "downloads");
             Directory.CreateDirectory(_tempDirectory);
             Directory.CreateDirectory(_downloadsDirectory);
 
-            // Initialize WebView2
-            InitializeWebView();
-
+            // Populate quality selector on startup
+            PopulateQualitySelector();
+            
             LogMessage("YT-DLP Wrapper started successfully!");
             LogMessage("Simple workflow: 1) Load video for preview → 2) Choose quality → 3) Download");
             LogMessage($"Downloads will be saved to: {_downloadsDirectory}");
@@ -158,299 +183,133 @@ namespace YtDlpWrapper
         {
             if (e.IsSuccess)
             {
-                LogMessage("🎬 YouTube preview ready!");
+                if (_isFirstVideoLoad)
+                {
+                    LogMessage("🎬 YouTube preview ready!");
+                    _isFirstVideoLoad = false;
+                }
             }
             else
             {
-                LogMessage("❌ Failed to load YouTube preview.");
+                LogMessage($"Failed to load video in WebView2: {e.WebErrorStatus}");
             }
         }
 
-
-
-        private async Task<List<VideoFormat>> FetchAvailableFormatsAsync(string url)
+        private async Task FetchAvailableFormatsAsync(string url)
         {
-            var formats = new List<VideoFormat>();
-            
-            try
+            LogMessage("🔍 Analyzing available video formats...");
+            var processInfo = new ProcessStartInfo
             {
-                LogMessage("🔍 Analyzing available video formats...");
-                
-                var processInfo = new ProcessStartInfo
+                FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "yt-dlp.exe"),
+                Arguments = $"--dump-json \"{url}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory
+            };
+
+            using (var process = new Process { StartInfo = processInfo })
+            {
+                var jsonOutput = "";
+                process.OutputDataReceived += (s, args) => { if (!string.IsNullOrEmpty(args.Data)) jsonOutput += args.Data; };
+                var errorOutput = "";
+                process.ErrorDataReceived += (s, args) => { if (!string.IsNullOrEmpty(args.Data)) errorOutput += args.Data; };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                await Task.Run(() => process.WaitForExit());
+
+                if (process.ExitCode == 0)
                 {
-                    FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "yt-dlp.exe"),
-                    Arguments = $"-F --no-playlist \"{url}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true,
-                    WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory
+                    var videoInfo = JsonSerializer.Deserialize<YtDlpVideoInfo>(jsonOutput);
+                    if (videoInfo?.Formats != null)
+                    {
+                        _availableFormats = videoInfo.Formats;
+                        LogMessage($"✅ Found {_availableFormats.Count} available formats.");
+                    }
+                }
+                else
+                {
+                    LogMessage($"❌ Could not fetch formats. Error: {errorOutput}");
+                    _availableFormats = new List<YtDlpFormat>(); // Ensure list is empty on failure
+                }
+            }
+        }
+
+        private void PopulateQualitySelector()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                QualitySelector.Items.Clear();
+
+                // Handle case where format detection fails
+                if (_availableFormats == null || !_availableFormats.Any())
+                {
+                    LogMessage("⚠️ No formats found or failed to fetch. Using fallback quality options.");
+                    // Provide a generic, robust list if detection fails
+                    var fallbackOptions = new Dictionary<string, string>
+                    {
+                        { "🔥 Best Available", "best" }, { "📹 1080p (FHD)", "1080" },
+                        { "🎥 720p (HD)", "720" }, { "📱 480p", "480" },
+                        { "🎵 Best Audio (m4a)", "bestaudio[ext=m4a]" }
+                    };
+                    foreach (var option in fallbackOptions)
+                    {
+                        QualitySelector.Items.Add(new ComboBoxItem { Content = option.Key, Tag = option.Value });
+                    }
+                    QualitySelector.SelectedIndex = 0;
+                    return;
+                }
+
+                // Create a dictionary of quality labels and their corresponding resolution values
+                var qualityLevels = new Dictionary<string, int>
+                {
+                    { "🔥 Best Available", 9999 }, // Always show "Best Available"
+                    { "📺 4K (2160p)", 2160 }, { "🎬 1440p (2K)", 1440 },
+                    { "📹 1080p (FHD)", 1080 }, { "🎥 720p (HD)", 720 },
+                    { "📱 480p", 480 }, { "💾 360p", 360 }
                 };
 
-                using (var process = new Process { StartInfo = processInfo })
+                // Find the maximum available video height
+                var maxHeight = _availableFormats
+                    .Where(f => f.Height.HasValue)
+                    .Max(f => f.Height.Value);
+
+                // Add quality options that are available for the current video
+                foreach (var level in qualityLevels)
                 {
-                    var output = "";
-                    process.OutputDataReceived += (s, args) =>
+                    if (level.Value == 9999 || level.Value <= maxHeight)
                     {
-                        if (!string.IsNullOrEmpty(args.Data))
-                        {
-                            output += args.Data + "\n";
-                        }
-                    };
-
-                    process.Start();
-                    process.BeginOutputReadLine();
-                    await Task.Run(() => process.WaitForExit());
-
-                    if (process.ExitCode == 0)
-                    {
-                        formats = ParseFormatsFromOutput(output);
-                        LogMessage($"✅ Found {formats.Count} available formats");
-                    }
-                    else
-                    {
-                        LogMessage("❌ Could not fetch available formats");
+                        var tagValue = level.Value == 9999 ? "best" : level.Value.ToString();
+                        QualitySelector.Items.Add(new ComboBoxItem { Content = level.Key, Tag = tagValue });
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                LogMessage($"Error fetching formats: {ex.Message}");
-            }
-            
-            return formats;
-        }
 
-        private List<VideoFormat> ParseFormatsFromOutput(string output)
+                // Add audio-only option
+                QualitySelector.Items.Add(new ComboBoxItem { Content = "--- Audio Only ---", IsEnabled = false });
+                QualitySelector.Items.Add(new ComboBoxItem { Content = "🎵 Best Audio (m4a)", Tag = "bestaudio[ext=m4a]" });
+                
+                QualitySelector.SelectedIndex = 0; // Default to Best Available
+                LogMessage("✅ Dynamic quality options populated.");
+            });
+        }
+        
+        private void AddFallbackQualityOptions()
         {
-            var formats = new List<VideoFormat>();
-            var lines = output.Split('\n');
-            bool foundFormatSection = false;
-
-            foreach (var line in lines)
+            var defaultItems = new[]
             {
-                // Look for the actual header line
-                if (line.Contains("ID") && line.Contains("EXT") && line.Contains("RESOLUTION"))
-                {
-                    foundFormatSection = true;
-                    continue;
-                }
-
-                // Skip separator lines and empty lines
-                if (!foundFormatSection || string.IsNullOrWhiteSpace(line) || line.Contains("─"))
-                    continue;
-
-                // Skip storyboard formats
-                if (line.Contains("storyboard") || line.Contains("mhtml"))
-                    continue;
-
-                try
-                {
-                    // Parse the new yt-dlp format
-                    // Format: ID EXT RESOLUTION FPS CH │ FILESIZE TBR PROTO │ VCODEC VBR ACODEC ABR ASR MORE INFO
-                    var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length < 3) continue;
-
-                    var format = new VideoFormat
-                    {
-                        Id = parts[0],
-                        Extension = parts[1],
-                        Resolution = parts[2]
-                    };
-
-                    // Find filesize (look for patterns like "1.23MiB", "456KiB")
-                    var fileSizeMatch = Regex.Match(line, @"(\d+\.?\d*[KMG]iB)");
-                    if (fileSizeMatch.Success)
-                    {
-                        format.FileSize = fileSizeMatch.Groups[1].Value;
-                    }
-
-                    // Determine format type based on content
-                    var lowerLine = line.ToLower();
-                    format.HasVideo = !lowerLine.Contains("audio only");
-                    format.HasAudio = !lowerLine.Contains("video only");
-
-                    // Extract height from resolution (240p, 360p, 720p, 1080p, etc.)
-                    var heightMatch = Regex.Match(format.Resolution, @"(\d+)x(\d+)");
-                    if (heightMatch.Success)
-                    {
-                        int height;
-                        if (int.TryParse(heightMatch.Groups[2].Value, out height))
-                        {
-                            format.Height = height;
-                        }
-                    }
-
-                    // Extract codec information
-                    if (lowerLine.Contains("avc1") || lowerLine.Contains("h264"))
-                        format.Codec += "H.264 ";
-                    if (lowerLine.Contains("vp9"))
-                        format.Codec += "VP9 ";
-                    if (lowerLine.Contains("av01"))
-                        format.Codec += "AV1 ";
-                    if (lowerLine.Contains("mp4a") || lowerLine.Contains("aac"))
-                        format.Codec += "AAC ";
-                    if (lowerLine.Contains("opus"))
-                        format.Codec += "Opus ";
-
-                    // Get additional info from the line (everything after the last pipe │)
-                    var pipeIndex = line.LastIndexOf('│');
-                    if (pipeIndex > 0 && pipeIndex < line.Length - 1)
-                    {
-                        var rightPart = line.Substring(pipeIndex + 1).Trim();
-                        // Extract the part after the codec info
-                        var noteParts = rightPart.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (noteParts.Length > 3)
-                        {
-                            // Skip codec info and take the rest as note
-                            format.Note = string.Join(" ", noteParts.Skip(3));
-                        }
-                        else
-                        {
-                            format.Note = rightPart;
-                        }
-                    }
-
-                    // Create display name with better formatting
-                    if (format.HasVideo && format.HasAudio)
-                    {
-                        var resolution = $"{format.Height}p" ?? format.Resolution;
-                        var size = !string.IsNullOrEmpty(format.FileSize) ? $" ({format.FileSize})" : "";
-                        var codec = !string.IsNullOrEmpty(format.Codec) ? $" - {format.Codec.Trim()}" : "";
-                        format.DisplayName = $"📺 {resolution}{codec}{size}";
-                    }
-                    else if (format.HasVideo && !format.HasAudio)
-                    {
-                        var resolution = $"{format.Height}p" ?? format.Resolution;
-                        var codec = !string.IsNullOrEmpty(format.Codec) ? $" - {format.Codec.Trim()}" : "";
-                        format.DisplayName = $"🎬 {resolution} Video Only{codec}";
-                    }
-                    else if (!format.HasVideo && format.HasAudio)
-                    {
-                        var size = !string.IsNullOrEmpty(format.FileSize) ? $" ({format.FileSize})" : "";
-                        var codec = !string.IsNullOrEmpty(format.Codec) ? $" - {format.Codec.Trim()}" : "";
-                        format.DisplayName = $"🎵 Audio Only{codec}{size}";
-                    }
-                    else
-                    {
-                        continue; // Skip unknown formats
-                    }
-
-                    formats.Add(format);
-                }
-                catch (Exception ex)
-                {
-                    // Skip problematic lines but continue parsing
-                    LogMessage($"Debug: Skipped line parsing: {ex.Message}");
-                    continue;
-                }
-            }
-
-            // Filter and sort formats intelligently
-            var result = new List<VideoFormat>();
-
-            // Find the best AAC audio format for combining with video-only formats
-            // Look for English original AAC first, then any AAC format
-            var aacAudioFormats = formats
-                .Where(f => !f.HasVideo && f.HasAudio && f.Codec.Contains("AAC"))
-                .Where(f => f.Extension == "m4a") // Prefer m4a over other formats
-                .ToList();
-            
-            LogMessage($"Debug: Found {aacAudioFormats.Count} AAC audio formats: {string.Join(", ", aacAudioFormats.Select(f => f.Id))}");
-            
-            var bestAacAudio = aacAudioFormats
-                .OrderByDescending(f => f.Id.StartsWith("140-") && f.Note.Contains("English original")) // Prefer English original AAC
-                .ThenByDescending(f => f.Id.StartsWith("140-")) // Then any 140- format
-                .ThenByDescending(f => f.Id == "140") // Legacy fallback
-                .FirstOrDefault();
-            
-            if (bestAacAudio != null)
+                "🔥 Best Available", "📹 1080p (FHD)", "🎥 720p (HD)", "📱 480p", "--- Audio Only ---", "🎵 Best Quality Audio (m4a)"
+            };
+            foreach (var item in defaultItems)
             {
-                LogMessage($"Debug: Selected best AAC audio format: {bestAacAudio.Id} ({bestAacAudio.Note})");
+                var comboBoxItem = new ComboBoxItem { Content = item, Tag = item };
+                if (item.StartsWith("---")) comboBoxItem.IsEnabled = false;
+                QualitySelector.Items.Add(comboBoxItem);
             }
-            else
-            {
-                LogMessage("Debug: No suitable AAC audio format found!");
-            }
-
-            // Add native combined video+audio formats first
-            var nativeCombinedFormats = formats
-                .Where(f => f.HasVideo && f.HasAudio)
-                .OrderByDescending(f => f.Height)
-                .ThenBy(f => f.Extension == "mp4" ? 0 : 1) // Prefer MP4
-                .ThenBy(f => f.Codec.Contains("AAC") ? 0 : 1) // Prefer AAC audio
-                .ThenBy(f => f.Codec.Contains("Opus") ? 1 : 0) // Deprioritize Opus
-                .ToList();
-
-            result.AddRange(nativeCombinedFormats);
-
-            // Create synthetic combined formats by pairing video-only with best audio
-            if (bestAacAudio != null)
-            {
-                var videoFormatsForFiltering = formats
-                    .Where(f => f.HasVideo && !f.HasAudio && f.Height >= 144)
-                    .Where(f => f.Extension == "mp4" && f.Codec.Contains("H.264")) // Prefer H.264 MP4
-                    .ToList();
-                
-                LogMessage($"Debug: Found {videoFormatsForFiltering.Count} H.264 video-only formats before filtering");
-                
-                var filteredVideoFormats = videoFormatsForFiltering
-                    .Where(f => !f.Note.Contains("m3u8") && !f.Note.Contains("Untested")) // Exclude m3u8 and untested formats
-                    .ToList();
-                
-                LogMessage($"Debug: {filteredVideoFormats.Count} video formats after filtering: {string.Join(", ", filteredVideoFormats.Select(f => $"{f.Id}({f.Height}p)"))}");
-                
-                var videoFormatsForCombining = filteredVideoFormats
-                    .GroupBy(f => f.Height)
-                    .OrderByDescending(g => g.Key)
-                    .Take(8) // Get top 8 resolutions
-                    .ToList();
-
-                foreach (var group in videoFormatsForCombining)
-                {
-                    var videoFormat = group.First();
-                    var syntheticFormat = new VideoFormat
-                    {
-                        Id = $"{videoFormat.Id}+{bestAacAudio.Id}",
-                        Extension = "mp4",
-                        Resolution = videoFormat.Resolution,
-                        Height = videoFormat.Height,
-                        HasVideo = true,
-                        HasAudio = true,
-                        Codec = $"{videoFormat.Codec.Trim()} + AAC",
-                        FileSize = "Auto-Combined",
-                        DisplayName = $"📺 {videoFormat.Height}p - H.264 + AAC (Auto-Combined)"
-                    };
-                    result.Add(syntheticFormat);
-                    LogMessage($"Debug: Created synthetic format: {syntheticFormat.Id} ({syntheticFormat.DisplayName})");
-                }
-            }
-
-            // Add video-only formats for advanced users
-            var videoOnlyFormats = formats
-                .Where(f => f.HasVideo && !f.HasAudio && f.Height >= 720)
-                .Where(f => !f.Note.Contains("m3u8") && !f.Note.Contains("Untested")) // Exclude problematic formats
-                .OrderByDescending(f => f.Height)
-                .ThenBy(f => f.Extension == "mp4" ? 0 : 1)
-                .Take(5)
-                .ToList();
-
-            result.AddRange(videoOnlyFormats);
-
-            // Add a few audio-only formats (prefer AAC over Opus)
-            var audioFormats = formats
-                .Where(f => !f.HasVideo && f.HasAudio)
-                .OrderBy(f => f.Codec.Contains("AAC") ? 0 : 1) // Prefer AAC
-                .ThenBy(f => f.Extension == "m4a" ? 0 : 1) // Prefer M4A
-                .Take(3)
-                .ToList();
-
-            result.AddRange(audioFormats);
-
-            return result;
+            QualitySelector.SelectedIndex = 0;
         }
-
-
 
         private async void LoadButton_Click(object sender, RoutedEventArgs e)
         {
@@ -462,11 +321,10 @@ namespace YtDlpWrapper
             }
 
             LoadButton.IsEnabled = false;
-                            LoadButton.Content = "🔄 Loading...";
+            LoadButton.Content = "🔄 Loading...";
 
             try
             {
-                // Show the YouTube player if it's a YouTube URL
                 if (IsYouTubeUrl(url))
                 {
                     LogMessage($"🎬 Loading YouTube video for preview: {url}");
@@ -475,21 +333,15 @@ namespace YtDlpWrapper
                 else
                 {
                     LogMessage($"🔗 Non-YouTube URL detected: {url}");
-                    LogMessage("Preview not available for this URL, but you can still download it.");
-                    
-                    // Keep video preview hidden for non-YouTube URLs
                     VideoPreviewSection.Visibility = Visibility.Collapsed;
                 }
-
-                // Fetch available formats from yt-dlp
-                _availableFormats = await FetchAvailableFormatsAsync(url);
                 
-                // Populate quality selector with actual available formats
-                await PopulateQualitySelector();
+                // Fetch formats and then populate the UI
+                await FetchAvailableFormatsAsync(url);
+                PopulateQualitySelector();
                 
-                // Show quality selection panel
                 QualitySelectionPanel.Visibility = Visibility.Visible;
-                LogMessage("✅ Ready to download! Choose your preferred quality and click 'Download Now'.");
+                LogMessage("✅ Ready to download! Choose your preferred quality.");
             }
             catch (Exception ex)
             {
@@ -501,107 +353,6 @@ namespace YtDlpWrapper
                 LoadButton.IsEnabled = true;
                 LoadButton.Content = "🎬 Load Video";
             }
-        }
-
-        private Task PopulateQualitySelector()
-        {
-            return Dispatcher.InvokeAsync(() =>
-            {
-                QualitySelector.Items.Clear();
-
-                if (_availableFormats.Count == 0)
-                {
-                    // Fallback to default options if format detection failed
-                    var defaultItems = new[]
-                    {
-                        "🔥 Best Available",
-                        "📺 2160p (4K)",
-                        "🎬 1440p (2K)",
-                        "📹 1080p (FHD)",
-                        "🎥 720p (HD)",
-                        "📱 480p",
-                        "💾 360p"
-                    };
-
-                    foreach (var item in defaultItems)
-                    {
-                        QualitySelector.Items.Add(new ComboBoxItem { Content = item });
-                    }
-                    QualitySelector.SelectedIndex = 4; // Default to 720p
-                    LogMessage("⚠️ Using default quality options (format detection failed)");
-                    return;
-                }
-
-                // Add "Best Available" option first
-                var bestItem = new ComboBoxItem 
-                { 
-                    Content = "🔥 Best Available (Auto-Select)",
-                    Tag = null // Special case for best
-                };
-                QualitySelector.Items.Add(bestItem);
-
-                // Group formats by resolution for cleaner display
-                var videoFormats = _availableFormats
-                    .Where(f => f.HasVideo && f.HasAudio)
-                    .GroupBy(f => f.Height)
-                    .OrderByDescending(g => g.Key);
-
-                foreach (var group in videoFormats)
-                {
-                    var bestFormat = group.OrderBy(f => f.Extension == "mp4" ? 0 : 1).First();
-                    var item = new ComboBoxItem
-                    {
-                        Content = bestFormat.DisplayName,
-                        Tag = bestFormat
-                    };
-                    QualitySelector.Items.Add(item);
-                }
-
-                // Add video-only formats if available
-                var videoOnlyFormats = _availableFormats
-                    .Where(f => f.HasVideo && !f.HasAudio && f.Height > 0)
-                    .GroupBy(f => f.Height)
-                    .OrderByDescending(g => g.Key)
-                    .Take(3); // Limit to top 3 resolutions
-
-                if (videoOnlyFormats.Any())
-                {
-                    QualitySelector.Items.Add(new ComboBoxItem { Content = "--- Video Only ---", IsEnabled = false });
-                    foreach (var group in videoOnlyFormats)
-                    {
-                        var bestFormat = group.OrderBy(f => f.Extension == "mp4" ? 0 : 1).First();
-                        var item = new ComboBoxItem
-                        {
-                            Content = bestFormat.DisplayName,
-                            Tag = bestFormat
-                        };
-                        QualitySelector.Items.Add(item);
-                    }
-                }
-
-                // Add audio-only formats
-                var audioFormats = _availableFormats
-                    .Where(f => !f.HasVideo && f.HasAudio)
-                    .Take(3);
-
-                if (audioFormats.Any())
-                {
-                    QualitySelector.Items.Add(new ComboBoxItem { Content = "--- Audio Only ---", IsEnabled = false });
-                    foreach (var format in audioFormats)
-                    {
-                        var item = new ComboBoxItem
-                        {
-                            Content = format.DisplayName,
-                            Tag = format
-                        };
-                        QualitySelector.Items.Add(item);
-                    }
-                }
-
-                // Select best available by default
-                QualitySelector.SelectedIndex = 0;
-                LogMessage($"📋 Populated {QualitySelector.Items.Count} quality options from yt-dlp analysis");
-            }).Task;
         }
 
         private async void DownloadButton_Click(object sender, RoutedEventArgs e)
@@ -622,8 +373,6 @@ namespace YtDlpWrapper
                 var selectedQuality = ((ComboBoxItem)QualitySelector.SelectedItem)?.Content?.ToString() ?? "720p (HD)";
                 LogMessage($"Starting download for: {url}");
                 LogMessage($"Selected quality: {selectedQuality}");
-                LogMessage("📥 Downloading with MP4 video and AAC audio for maximum compatibility.");
-                LogMessage("🎵 Audio format optimized to avoid Opus codec issues.");
                 await DownloadVideoAsync(url);
             }
             catch (Exception ex)
@@ -639,75 +388,53 @@ namespace YtDlpWrapper
             }
         }
 
-
-
         private async Task DownloadVideoAsync(string url)
         {
             var outputPath = Path.Combine(_downloadsDirectory, "%(title)s.%(ext)s");
-            string formatArgument;
-            
-            // Get the selected format
             var selectedItem = QualitySelector.SelectedItem as ComboBoxItem;
-            var selectedFormat = selectedItem?.Tag as VideoFormat;
-            
-            if (selectedFormat != null)
+
+            if (selectedItem?.Tag == null)
             {
-                // Use specific format ID from yt-dlp analysis
-                formatArgument = selectedFormat.Id;
-                LogMessage($"📥 Using detected format ID: {selectedFormat.Id} ({selectedFormat.DisplayName})");
-                
-                // For video-only formats, manually combine with best AAC audio
-                if (selectedFormat.HasVideo && !selectedFormat.HasAudio)
-                {
-                    // Try to find the best AAC audio format (prefer English original)
-                    var audioFormat = _availableFormats
-                        .Where(f => !f.HasVideo && f.HasAudio && f.Codec.Contains("AAC"))
-                        .Where(f => f.Extension == "m4a")
-                        .OrderByDescending(f => f.Id.StartsWith("140-") && f.Note.Contains("English original"))
-                        .ThenByDescending(f => f.Id.StartsWith("140-"))
-                        .FirstOrDefault();
-                    
-                    if (audioFormat != null)
-                    {
-                        formatArgument = $"{selectedFormat.Id}+{audioFormat.Id}";
-                        LogMessage($"🎵 Combining video format {selectedFormat.Id} with audio format {audioFormat.Id}");
-                    }
-                    else
-                    {
-                        // Fallback to best audio
-                        formatArgument = $"{selectedFormat.Id}+bestaudio";
-                        LogMessage($"🎵 Combining video format {selectedFormat.Id} with best available audio");
-                    }
-                }
-                // For combined synthetic formats, use the ID as-is (already properly formatted)
-                else if (selectedFormat.Id.Contains("+"))
-                {
-                    formatArgument = selectedFormat.Id;
-                    LogMessage($"🔗 Using synthetic combined format: {selectedFormat.Id}");
-                }
+                LogMessage("❌ No quality format selected.");
+                return;
+            }
+
+            var selectionTag = selectedItem.Tag.ToString();
+            string formatArgument;
+
+            if (selectionTag.Contains("bestaudio"))
+            {
+                // Handle audio-only selection
+                formatArgument = selectionTag;
+            }
+            else if (selectionTag == "best")
+            {
+                // Handle "Best Available" selection
+                formatArgument = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best";
             }
             else
             {
-                // Fallback to best quality for default options or "Best Available"
-                var selectedText = selectedItem?.Content?.ToString() ?? "";
-                formatArgument = selectedText switch
-                {
-                    var text when text.Contains("Best Available") => "best",
-                    var text when text.Contains("2160p") || text.Contains("4K") => "bv[height<=2160]+ba/bv[height<=2160][ext=mp4]+ba[ext=m4a]/b[height<=2160][ext=mp4]",
-                    var text when text.Contains("1440p") || text.Contains("2K") => "bv[height<=1440]+ba/bv[height<=1440][ext=mp4]+ba[ext=m4a]/b[height<=1440][ext=mp4]",
-                    var text when text.Contains("1080p") => "bv[height<=1080]+ba/bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080][ext=mp4]",
-                    var text when text.Contains("720p") => "bv[height<=720]+ba/bv[height<=720][ext=mp4]+ba[ext=m4a]/b[height<=720][ext=mp4]",
-                    var text when text.Contains("480p") => "bv[height<=480]+ba/bv[height<=480][ext=mp4]+ba[ext=m4a]/b[height<=480][ext=mp4]",
-                    var text when text.Contains("360p") => "bv[height<=360]+ba/bv[height<=360][ext=mp4]+ba[ext=m4a]/b[height<=360][ext=mp4]",
-                    _ => "best"
-                };
-                LogMessage($"📥 Using fallback format: {formatArgument}");
+                // Handle resolution-based selection
+                formatArgument = $"bestvideo[height<={selectionTag}][ext=mp4]+bestaudio[ext=m4a]/best[height<={selectionTag}][ext=mp4]/best";
             }
+            
+            LogMessage($"✅ Using robust format selector: {formatArgument}");
+
+            var arguments = new List<string>
+            {
+                "--format", $"\"{formatArgument}\"",
+                "--merge-output-format", "mp4",
+                "--no-playlist",
+                "--output", $"\"{outputPath}\"",
+                $"\"{url}\""
+            };
+            
+            var argumentString = string.Join(" ", arguments);
             
             var processInfo = new ProcessStartInfo
             {
                 FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "yt-dlp.exe"),
-                Arguments = $"--format \"{formatArgument}\" --merge-output-format mp4 --audio-quality 0 --prefer-free-formats --no-playlist --output \"{outputPath}\" \"{url}\"",
+                Arguments = argumentString,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -715,24 +442,17 @@ namespace YtDlpWrapper
                 WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory
             };
 
-            LogMessage("Executing yt-dlp...");
+            LogMessage($"Executing yt-dlp: yt-dlp {argumentString}");
 
             using (var process = new Process { StartInfo = processInfo })
             {
                 process.OutputDataReceived += (s, args) =>
                 {
-                    if (!string.IsNullOrEmpty(args.Data))
-                    {
-                        LogMessage($"yt-dlp: {args.Data}");
-                    }
+                    if (!string.IsNullOrEmpty(args.Data)) LogMessage($"yt-dlp: {args.Data}");
                 };
-
                 process.ErrorDataReceived += (s, args) =>
                 {
-                    if (!string.IsNullOrEmpty(args.Data))
-                    {
-                        LogMessage($"yt-dlp Error: {args.Data}");
-                    }
+                    if (!string.IsNullOrEmpty(args.Data)) LogMessage($"yt-dlp Error: {args.Data}");
                 };
 
                 process.Start();
@@ -744,14 +464,7 @@ namespace YtDlpWrapper
                 if (process.ExitCode == 0)
                 {
                     LogMessage("✅ Download completed successfully!");
-                    LogMessage("📁 Use the 'Show Downloads Folder' button below to locate your downloaded video.");
-                    
-                    // Show success message and ask if user wants to open folder
-                    var result = MessageBox.Show("Video downloaded successfully!\n\nWould you like to open the downloads folder to view your video?", 
-                                                "Download Complete", 
-                                                MessageBoxButton.YesNo, 
-                                                MessageBoxImage.Information);
-                    
+                    var result = MessageBox.Show("Download complete! Open downloads folder?", "Success", MessageBoxButton.YesNo, MessageBoxImage.Information);
                     if (result == MessageBoxResult.Yes)
                     {
                         OpenDownloadsFolder();
@@ -875,6 +588,8 @@ namespace YtDlpWrapper
                 MessageBox.Show($"Error clearing temp files: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+
 
 
 
