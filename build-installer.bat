@@ -73,7 +73,7 @@ echo ================================================================
 echo                    INSTALLER BUILD SUCCESSFUL!
 echo ================================================================
 echo.
-echo Installer created: installer-output\YT-DLP-Wrapper-Setup-v1.0.3.exe
+echo Installer created: installer-output\YT-DLP-Wrapper-Setup-v1.0.4.exe
 echo.
 echo The installer includes:
 echo   ✓ YT-DLP Wrapper application
@@ -91,7 +91,7 @@ set /p "test=Do you want to test the installer now? (y/n): "
 if /i "%test%"=="y" (
     echo.
     echo Starting installer...
-    start "" "installer-output\YT-DLP-Wrapper-Setup-v1.0.3.exe"
+    start "" "installer-output\YT-DLP-Wrapper-Setup-v1.0.4.exe"
 )
 
 pause 

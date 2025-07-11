@@ -2,7 +2,7 @@
 ; This script creates a professional installer for the YT-DLP Wrapper application
 
 #define MyAppName "YT-DLP Wrapper"
-#define MyAppVersion "1.0.3"
+#define MyAppVersion "1.0.4"
 #define MyAppPublisher "JAMT"
 #define MyAppURL "https://github.com/jamtero2001/yt-dlp-wrapper-"
 #define MyAppExeName "YtDlpWrapper.exe"
@@ -45,6 +45,7 @@ Source: "bin\Release\net6.0-windows\win-x64\*.json"; DestDir: "{app}"; Flags: ig
 Source: "bin\Release\net6.0-windows\win-x64\yt-dlp.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\Release\net6.0-windows\win-x64\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Dirs]
 Name: "{userappdata}\{#MyAppName}\Downloads"
