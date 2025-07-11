@@ -59,12 +59,12 @@ namespace YtDlpWrapper
             try
             {
                 await YouTubePlayer.EnsureCoreWebView2Async();
-                LogMessage("YouTube player initialized successfully.");
+                LogMessage("🎬 WebView2 initialized successfully!");
             }
             catch (Exception ex)
             {
-                LogMessage($"Failed to initialize YouTube player: {ex.Message}");
-                LogMessage("WebView2 runtime may not be installed. Download and install WebView2 Runtime from Microsoft.");
+                LogMessage($"⚠️ WebView2 initialization failed: {ex.Message}");
+                LogMessage("Video previews will not be available, but downloads will still work.");
             }
         }
 
@@ -154,6 +154,20 @@ namespace YtDlpWrapper
             }
         }
 
+        private void YouTubePlayer_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
+        {
+            if (e.IsSuccess)
+            {
+                LogMessage("🎬 YouTube preview ready!");
+            }
+            else
+            {
+                LogMessage("❌ Failed to load YouTube preview.");
+            }
+        }
+
+
+
         private async Task<List<VideoFormat>> FetchAvailableFormatsAsync(string url)
         {
             var formats = new List<VideoFormat>();
@@ -165,7 +179,7 @@ namespace YtDlpWrapper
                 var processInfo = new ProcessStartInfo
                 {
                     FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "yt-dlp.exe"),
-                    Arguments = $"-F \"{url}\"",
+                    Arguments = $"-F --no-playlist \"{url}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -279,11 +293,22 @@ namespace YtDlpWrapper
                     if (lowerLine.Contains("opus"))
                         format.Codec += "Opus ";
 
-                    // Get additional info from the line
-                    var moreInfoStart = line.LastIndexOf(']');
-                    if (moreInfoStart > 0 && moreInfoStart < line.Length - 1)
+                    // Get additional info from the line (everything after the last pipe │)
+                    var pipeIndex = line.LastIndexOf('│');
+                    if (pipeIndex > 0 && pipeIndex < line.Length - 1)
                     {
-                        format.Note = line.Substring(moreInfoStart + 1).Trim();
+                        var rightPart = line.Substring(pipeIndex + 1).Trim();
+                        // Extract the part after the codec info
+                        var noteParts = rightPart.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (noteParts.Length > 3)
+                        {
+                            // Skip codec info and take the rest as note
+                            format.Note = string.Join(" ", noteParts.Skip(3));
+                        }
+                        else
+                        {
+                            format.Note = rightPart;
+                        }
                     }
 
                     // Create display name with better formatting
@@ -325,10 +350,28 @@ namespace YtDlpWrapper
             var result = new List<VideoFormat>();
 
             // Find the best AAC audio format for combining with video-only formats
-            var bestAacAudio = formats
+            // Look for English original AAC first, then any AAC format
+            var aacAudioFormats = formats
                 .Where(f => !f.HasVideo && f.HasAudio && f.Codec.Contains("AAC"))
-                .OrderByDescending(f => f.Id == "140") // Prefer format 140 (standard AAC)
+                .Where(f => f.Extension == "m4a") // Prefer m4a over other formats
+                .ToList();
+            
+            LogMessage($"Debug: Found {aacAudioFormats.Count} AAC audio formats: {string.Join(", ", aacAudioFormats.Select(f => f.Id))}");
+            
+            var bestAacAudio = aacAudioFormats
+                .OrderByDescending(f => f.Id.StartsWith("140-") && f.Note.Contains("English original")) // Prefer English original AAC
+                .ThenByDescending(f => f.Id.StartsWith("140-")) // Then any 140- format
+                .ThenByDescending(f => f.Id == "140") // Legacy fallback
                 .FirstOrDefault();
+            
+            if (bestAacAudio != null)
+            {
+                LogMessage($"Debug: Selected best AAC audio format: {bestAacAudio.Id} ({bestAacAudio.Note})");
+            }
+            else
+            {
+                LogMessage("Debug: No suitable AAC audio format found!");
+            }
 
             // Add native combined video+audio formats first
             var nativeCombinedFormats = formats
@@ -344,9 +387,20 @@ namespace YtDlpWrapper
             // Create synthetic combined formats by pairing video-only with best audio
             if (bestAacAudio != null)
             {
-                var videoFormatsForCombining = formats
+                var videoFormatsForFiltering = formats
                     .Where(f => f.HasVideo && !f.HasAudio && f.Height >= 144)
                     .Where(f => f.Extension == "mp4" && f.Codec.Contains("H.264")) // Prefer H.264 MP4
+                    .ToList();
+                
+                LogMessage($"Debug: Found {videoFormatsForFiltering.Count} H.264 video-only formats before filtering");
+                
+                var filteredVideoFormats = videoFormatsForFiltering
+                    .Where(f => !f.Note.Contains("m3u8") && !f.Note.Contains("Untested")) // Exclude m3u8 and untested formats
+                    .ToList();
+                
+                LogMessage($"Debug: {filteredVideoFormats.Count} video formats after filtering: {string.Join(", ", filteredVideoFormats.Select(f => $"{f.Id}({f.Height}p)"))}");
+                
+                var videoFormatsForCombining = filteredVideoFormats
                     .GroupBy(f => f.Height)
                     .OrderByDescending(g => g.Key)
                     .Take(8) // Get top 8 resolutions
@@ -368,12 +422,14 @@ namespace YtDlpWrapper
                         DisplayName = $"📺 {videoFormat.Height}p - H.264 + AAC (Auto-Combined)"
                     };
                     result.Add(syntheticFormat);
+                    LogMessage($"Debug: Created synthetic format: {syntheticFormat.Id} ({syntheticFormat.DisplayName})");
                 }
             }
 
             // Add video-only formats for advanced users
             var videoOnlyFormats = formats
                 .Where(f => f.HasVideo && !f.HasAudio && f.Height >= 720)
+                .Where(f => !f.Note.Contains("m3u8") && !f.Note.Contains("Untested")) // Exclude problematic formats
                 .OrderByDescending(f => f.Height)
                 .ThenBy(f => f.Extension == "mp4" ? 0 : 1)
                 .Take(5)
@@ -394,19 +450,7 @@ namespace YtDlpWrapper
             return result;
         }
 
-        private string GetSelectedFormatId()
-        {
-            string selectedFormatId = "best";
-            Dispatcher.Invoke(() =>
-            {
-                var selectedItem = QualitySelector.SelectedItem as ComboBoxItem;
-                if (selectedItem?.Tag is VideoFormat format)
-                {
-                    selectedFormatId = format.Id;
-                }
-            });
-            return selectedFormatId;
-        }
+
 
         private async void LoadButton_Click(object sender, RoutedEventArgs e)
         {
@@ -418,7 +462,7 @@ namespace YtDlpWrapper
             }
 
             LoadButton.IsEnabled = false;
-            LoadButton.Content = "🔄 Loading...";
+                            LoadButton.Content = "🔄 Loading...";
 
             try
             {
@@ -437,10 +481,10 @@ namespace YtDlpWrapper
                     VideoPreviewSection.Visibility = Visibility.Collapsed;
                 }
 
-                // Fetch available formats
+                // Fetch available formats from yt-dlp
                 _availableFormats = await FetchAvailableFormatsAsync(url);
                 
-                // Populate quality selector
+                // Populate quality selector with actual available formats
                 await PopulateQualitySelector();
                 
                 // Show quality selection panel
@@ -459,9 +503,9 @@ namespace YtDlpWrapper
             }
         }
 
-        private async Task PopulateQualitySelector()
+        private Task PopulateQualitySelector()
         {
-            await Dispatcher.InvokeAsync(() =>
+            return Dispatcher.InvokeAsync(() =>
             {
                 QualitySelector.Items.Clear();
 
@@ -556,8 +600,8 @@ namespace YtDlpWrapper
 
                 // Select best available by default
                 QualitySelector.SelectedIndex = 0;
-                LogMessage($"📋 Populated {QualitySelector.Items.Count} quality options");
-            });
+                LogMessage($"📋 Populated {QualitySelector.Items.Count} quality options from yt-dlp analysis");
+            }).Task;
         }
 
         private async void DownloadButton_Click(object sender, RoutedEventArgs e)
@@ -595,6 +639,8 @@ namespace YtDlpWrapper
             }
         }
 
+
+
         private async Task DownloadVideoAsync(string url)
         {
             var outputPath = Path.Combine(_downloadsDirectory, "%(title)s.%(ext)s");
@@ -606,15 +652,38 @@ namespace YtDlpWrapper
             
             if (selectedFormat != null)
             {
-                // Use specific format ID
+                // Use specific format ID from yt-dlp analysis
                 formatArgument = selectedFormat.Id;
-                LogMessage($"📥 Using format ID: {selectedFormat.Id} ({selectedFormat.DisplayName})");
+                LogMessage($"📥 Using detected format ID: {selectedFormat.Id} ({selectedFormat.DisplayName})");
                 
                 // For video-only formats, manually combine with best AAC audio
                 if (selectedFormat.HasVideo && !selectedFormat.HasAudio)
                 {
-                    formatArgument = $"{selectedFormat.Id}+140/best"; // 140 is typically AAC audio
-                    LogMessage($"🎵 Combining video format {selectedFormat.Id} with AAC audio (140)");
+                    // Try to find the best AAC audio format (prefer English original)
+                    var audioFormat = _availableFormats
+                        .Where(f => !f.HasVideo && f.HasAudio && f.Codec.Contains("AAC"))
+                        .Where(f => f.Extension == "m4a")
+                        .OrderByDescending(f => f.Id.StartsWith("140-") && f.Note.Contains("English original"))
+                        .ThenByDescending(f => f.Id.StartsWith("140-"))
+                        .FirstOrDefault();
+                    
+                    if (audioFormat != null)
+                    {
+                        formatArgument = $"{selectedFormat.Id}+{audioFormat.Id}";
+                        LogMessage($"🎵 Combining video format {selectedFormat.Id} with audio format {audioFormat.Id}");
+                    }
+                    else
+                    {
+                        // Fallback to best audio
+                        formatArgument = $"{selectedFormat.Id}+bestaudio";
+                        LogMessage($"🎵 Combining video format {selectedFormat.Id} with best available audio");
+                    }
+                }
+                // For combined synthetic formats, use the ID as-is (already properly formatted)
+                else if (selectedFormat.Id.Contains("+"))
+                {
+                    formatArgument = selectedFormat.Id;
+                    LogMessage($"🔗 Using synthetic combined format: {selectedFormat.Id}");
                 }
             }
             else
@@ -624,12 +693,12 @@ namespace YtDlpWrapper
                 formatArgument = selectedText switch
                 {
                     var text when text.Contains("Best Available") => "best",
-                    var text when text.Contains("2160p") || text.Contains("4K") => "bestvideo[height<=2160]+bestaudio/best[height<=2160]",
-                    var text when text.Contains("1440p") || text.Contains("2K") => "bestvideo[height<=1440]+bestaudio/best[height<=1440]",
-                    var text when text.Contains("1080p") => "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
-                    var text when text.Contains("720p") => "bestvideo[height<=720]+bestaudio/best[height<=720]",
-                    var text when text.Contains("480p") => "bestvideo[height<=480]+bestaudio/best[height<=480]",
-                    var text when text.Contains("360p") => "bestvideo[height<=360]+bestaudio/best[height<=360]",
+                    var text when text.Contains("2160p") || text.Contains("4K") => "bv[height<=2160]+ba/bv[height<=2160][ext=mp4]+ba[ext=m4a]/b[height<=2160][ext=mp4]",
+                    var text when text.Contains("1440p") || text.Contains("2K") => "bv[height<=1440]+ba/bv[height<=1440][ext=mp4]+ba[ext=m4a]/b[height<=1440][ext=mp4]",
+                    var text when text.Contains("1080p") => "bv[height<=1080]+ba/bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080][ext=mp4]",
+                    var text when text.Contains("720p") => "bv[height<=720]+ba/bv[height<=720][ext=mp4]+ba[ext=m4a]/b[height<=720][ext=mp4]",
+                    var text when text.Contains("480p") => "bv[height<=480]+ba/bv[height<=480][ext=mp4]+ba[ext=m4a]/b[height<=480][ext=mp4]",
+                    var text when text.Contains("360p") => "bv[height<=360]+ba/bv[height<=360][ext=mp4]+ba[ext=m4a]/b[height<=360][ext=mp4]",
                     _ => "best"
                 };
                 LogMessage($"📥 Using fallback format: {formatArgument}");
@@ -638,7 +707,7 @@ namespace YtDlpWrapper
             var processInfo = new ProcessStartInfo
             {
                 FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "yt-dlp.exe"),
-                Arguments = $"--format \"{formatArgument}\" --merge-output-format mp4 --audio-quality 0 --output \"{outputPath}\" \"{url}\"",
+                Arguments = $"--format \"{formatArgument}\" --merge-output-format mp4 --audio-quality 0 --prefer-free-formats --no-playlist --output \"{outputPath}\" \"{url}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -695,17 +764,7 @@ namespace YtDlpWrapper
             }
         }
 
-        private void YouTubePlayer_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
-        {
-            if (e.IsSuccess)
-            {
-                LogMessage("🎬 YouTube preview ready!");
-            }
-            else
-            {
-                LogMessage("❌ Failed to load YouTube preview.");
-            }
-        }
+
 
         private void OpenDownloadsButton_Click(object sender, RoutedEventArgs e)
         {
@@ -817,6 +876,8 @@ namespace YtDlpWrapper
             }
         }
 
+
+
         // Window Control Event Handlers
         private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
@@ -869,6 +930,8 @@ namespace YtDlpWrapper
             
             base.OnClosed(e);
         }
+
+
 
         #region Window Resize Functionality
 

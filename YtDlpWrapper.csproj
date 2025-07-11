@@ -28,7 +28,11 @@
 
   <ItemGroup>
     <Resource Include="icon.ico" />
+    <Resource Include="cats.png" />
     <None Include="icon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="cats.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="yt-dlp.exe" Condition="Exists('yt-dlp.exe')">

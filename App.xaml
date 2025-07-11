@@ -3,112 +3,48 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <!-- SwarmAI Inspired Dark Color Palette -->
-        <SolidColorBrush x:Key="BackgroundColor" Color="#0A0A0A"/>
-        <SolidColorBrush x:Key="SurfaceColor" Color="#1A1A1A"/>
-        <SolidColorBrush x:Key="CardColor" Color="#252525"/>
-        <SolidColorBrush x:Key="AccentColor" Color="#FF6B35"/>
-        <SolidColorBrush x:Key="AccentHoverColor" Color="#FF8C69"/>
-        <SolidColorBrush x:Key="TextColor" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="TextSecondaryColor" Color="#B0B0B0"/>
-        <SolidColorBrush x:Key="BorderColor" Color="#404040"/>
-        <SolidColorBrush x:Key="ErrorColor" Color="#FF4757"/>
-        <SolidColorBrush x:Key="SuccessColor" Color="#2ED573"/>
-        
-        <!-- Modern Gradient Brushes -->
-        <LinearGradientBrush x:Key="CardGradient" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#2A2A2A" Offset="0"/>
-            <GradientStop Color="#1E1E1E" Offset="0.5"/>
-            <GradientStop Color="#151515" Offset="1"/>
-        </LinearGradientBrush>
-        
-        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#FF6B35" Offset="0"/>
-            <GradientStop Color="#FF7F50" Offset="1"/>
-        </LinearGradientBrush>
-        
-        <LinearGradientBrush x:Key="AccentHoverGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#FF8C69" Offset="0"/>
-            <GradientStop Color="#FFA07A" Offset="1"/>
-        </LinearGradientBrush>
-        
-        <LinearGradientBrush x:Key="ProgressGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#FF6B35" Offset="0"/>
-            <GradientStop Color="#FF8C69" Offset="1"/>
-        </LinearGradientBrush>
-        
-        <LinearGradientBrush x:Key="SuccessGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#2ED573" Offset="0"/>
-            <GradientStop Color="#7BED9F" Offset="1"/>
-        </LinearGradientBrush>
-        
-        <LinearGradientBrush x:Key="DangerGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#FF4757" Offset="0"/>
-            <GradientStop Color="#FF6B7A" Offset="1"/>
-        </LinearGradientBrush>
+        <!-- Clean Light Color Palette -->
+        <SolidColorBrush x:Key="BackgroundColor" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="SurfaceColor" Color="#F8F9FA"/>
+        <SolidColorBrush x:Key="CardColor" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="AccentColor" Color="#007ACC"/>
+        <SolidColorBrush x:Key="AccentHoverColor" Color="#005A9E"/>
+        <SolidColorBrush x:Key="TextColor" Color="#212529"/>
+        <SolidColorBrush x:Key="TextSecondaryColor" Color="#6C757D"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#DEE2E6"/>
+        <SolidColorBrush x:Key="ErrorColor" Color="#DC3545"/>
+        <SolidColorBrush x:Key="SuccessColor" Color="#28A745"/>
 
-        <!-- Modern Button Style -->
+        <!-- Simple Button Style -->
         <Style x:Key="ModernButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="20,12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect Color="#FF6B35" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
-                </Setter.Value>
-            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="ButtonBorder"
                                 Background="{TemplateBinding Background}" 
-                                CornerRadius="8" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3" 
                                 Padding="{TemplateBinding Padding}">
-                            <Border.RenderTransform>
-                                <ScaleTransform x:Name="ButtonScale" ScaleX="1" ScaleY="1"/>
-                            </Border.RenderTransform>
                             <ContentPresenter HorizontalAlignment="Center" 
                                               VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ButtonBorder"
-                                                           Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)"
-                                                           To="1.02" Duration="0:0:0.1"/>
-                                            <DoubleAnimation Storyboard.TargetName="ButtonBorder"
-                                                           Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)"
-                                                           To="1.02" Duration="0:0:0.1"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ButtonBorder"
-                                                           Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)"
-                                                           To="1" Duration="0:0:0.1"/>
-                                            <DoubleAnimation Storyboard.TargetName="ButtonBorder"
-                                                           Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)"
-                                                           To="1" Duration="0:0:0.1"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                                <Setter Property="Background" Value="{StaticResource AccentHoverGradient}"/>
+                                <Setter Property="Background" Value="{StaticResource AccentHoverColor}"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource AccentHoverColor}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter Property="Background" Value="{StaticResource AccentHoverColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -116,13 +52,13 @@
             </Setter>
         </Style>
 
-        <!-- Enhanced TextBox Style -->
+        <!-- Simple TextBox Style -->
         <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="Background" Value="White"/>
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="Padding" Value="8,6"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="Template">
@@ -132,18 +68,13 @@
                                 Background="{TemplateBinding Background}" 
                                 BorderBrush="{TemplateBinding BorderBrush}" 
                                 BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="8">
+                                CornerRadius="3">
                             <ScrollViewer x:Name="PART_ContentHost" 
                                           Padding="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="TextBoxBorder" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
-                                <Setter TargetName="TextBoxBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#FF6B35" BlurRadius="10" ShadowDepth="0" Opacity="0.4"/>
-                                    </Setter.Value>
-                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -151,7 +82,7 @@
             </Setter>
         </Style>
 
-        <!-- Enhanced ComboBox Style -->
+        <!-- Simple ComboBox Style -->
         <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
@@ -243,89 +174,42 @@
             </Setter>
         </Style>
 
-        <!-- Modern Dark Card Style -->
+        <!-- Simple Card Style -->
         <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource CardGradient}"/>
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="24"/>
-            <Setter Property="Margin" Value="12"/>
+            <Setter Property="Background" Value="{StaticResource CardColor}"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="8"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="8" Opacity="0.4"/>
-                </Setter.Value>
-            </Setter>
         </Style>
 
-        <!-- Modern Progress Bar Style -->
+        <!-- Simple Progress Bar Style -->
         <Style x:Key="ModernProgressBarStyle" TargetType="ProgressBar">
             <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
-            <Setter Property="Foreground" Value="{StaticResource ProgressGradient}"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="Height" Value="6"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ProgressBar">
-                        <Grid x:Name="TemplateRoot">
-                            <Border x:Name="PART_Track" 
-                                    Background="{TemplateBinding Background}"
-                                    CornerRadius="3"/>
-                            <Rectangle x:Name="PART_Indicator" 
-                                       Fill="{TemplateBinding Foreground}"
-                                       HorizontalAlignment="Left"
-                                       RadiusX="3" RadiusY="3">
-                                <Rectangle.Effect>
-                                    <DropShadowEffect Color="#FF6B35" BlurRadius="8" ShadowDepth="0" Opacity="0.6"/>
-                                </Rectangle.Effect>
-                            </Rectangle>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsIndeterminate" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard RepeatBehavior="Forever">
-                                            <DoubleAnimation Storyboard.TargetName="PART_Indicator"
-                                                           Storyboard.TargetProperty="(Rectangle.RenderTransform).(TranslateTransform.X)"
-                                                           From="-100" To="400" Duration="0:0:1.5">
-                                                <DoubleAnimation.EasingFunction>
-                                                    <QuadraticEase EasingMode="EaseInOut"/>
-                                                </DoubleAnimation.EasingFunction>
-                                            </DoubleAnimation>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
-        <!-- Title Text Style -->
+        <!-- Simple Text Styles -->
         <Style x:Key="TitleTextStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontSize" Value="20"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect Color="#000000" BlurRadius="10" ShadowDepth="2" Opacity="0.3"/>
-                </Setter.Value>
-            </Setter>
         </Style>
 
-        <!-- Subtitle Text Style -->
         <Style x:Key="SubtitleTextStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
         </Style>
 
-        <!-- Secondary Text Style -->
         <Style x:Key="SecondaryTextStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
