@@ -14,20 +14,27 @@
         ResizeMode="CanResize">
     
     <Window.Background>
-        <SolidColorBrush Color="#F5F5F5"/>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FDF6F0" Offset="0"/>
+            <GradientStop Color="#F4D7B5" Offset="1"/>
+        </LinearGradientBrush>
     </Window.Background>
     
     <Window.Resources>
-        <!-- Color Resources -->
-        <SolidColorBrush x:Key="BackgroundColor" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="SurfaceColor" Color="#F8F9FA"/>
-        <SolidColorBrush x:Key="AccentColor" Color="#007ACC"/>
-        <SolidColorBrush x:Key="TextPrimaryColor" Color="#212529"/>
-        <SolidColorBrush x:Key="TextSecondaryColor" Color="#6C757D"/>
-        <SolidColorBrush x:Key="BorderColor" Color="#DEE2E6"/>
-        <SolidColorBrush x:Key="HoverColor" Color="#E9ECEF"/>
-        <SolidColorBrush x:Key="CardColor" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="ErrorColor" Color="#DC3545"/>
+        <!-- Cat Theme Color Resources -->
+        <SolidColorBrush x:Key="BackgroundColor" Color="#FDF6F0"/>  <!-- Warm cream background -->
+        <SolidColorBrush x:Key="SurfaceColor" Color="#F4D7B5"/>     <!-- Light beige -->
+        <SolidColorBrush x:Key="AccentColor" Color="#F7931E"/>      <!-- Main orange -->
+        <SolidColorBrush x:Key="SecondaryAccentColor" Color="#E74C3C"/>  <!-- Red/orange -->
+        <SolidColorBrush x:Key="TextPrimaryColor" Color="#5D4037"/> <!-- Dark brown -->
+        <SolidColorBrush x:Key="TextSecondaryColor" Color="#8D6E63"/>  <!-- Medium brown -->
+        <SolidColorBrush x:Key="BorderColor" Color="#D7CCC8"/>      <!-- Light brown border -->
+        <SolidColorBrush x:Key="HoverColor" Color="#EFEBE9"/>       <!-- Light hover -->
+        <SolidColorBrush x:Key="CardColor" Color="#FFFFFF"/>        <!-- White cards -->
+        <SolidColorBrush x:Key="ErrorColor" Color="#E74C3C"/>       <!-- Red error -->
+        <SolidColorBrush x:Key="ProgressColor" Color="#F7931E"/>    <!-- Orange progress -->
+        <SolidColorBrush x:Key="ProgressBackgroundColor" Color="#A7A9AC"/>  <!-- Gray progress bg -->
+        <SolidColorBrush x:Key="WarmBrownColor" Color="#A67C52"/>   <!-- Light brown cats -->
         
         <!-- Card Style -->
         <Style x:Key="CardStyle" TargetType="Border">
@@ -99,29 +106,34 @@
             </Style.Triggers>
         </Style>
         
-        <!-- Modern Button Style -->
+        <!-- Cat Theme Button Style -->
         <Style x:Key="ModernButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource AccentColor}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="{StaticResource WarmBrownColor}"/>
             <Setter Property="Padding" Value="15,8"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}"
-                                CornerRadius="3"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#0066AA"/>
+                                <Setter Property="Background" Value="{StaticResource SecondaryAccentColor}"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#004C80"/>
+                                <Setter Property="Background" Value="{StaticResource WarmBrownColor}"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource TextPrimaryColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -139,20 +151,64 @@
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
         </Style>
         
-        <!-- Modern ProgressBar Style -->
+        <!-- Cat Theme ProgressBar Style -->
         <Style x:Key="ModernProgressBarStyle" TargetType="ProgressBar">
-            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
-            <Setter Property="Foreground" Value="{StaticResource AccentColor}"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="{StaticResource ProgressBackgroundColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource ProgressColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource WarmBrownColor}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ProgressBar">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="3">
-                            <Border x:Name="PART_Track" CornerRadius="3">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <Border x:Name="PART_Track" CornerRadius="10">
                                 <Border x:Name="PART_Indicator" 
                                         Background="{TemplateBinding Foreground}" 
                                         HorizontalAlignment="Left" 
-                                        CornerRadius="3"/>
+                                        CornerRadius="10">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#F7931E" 
+                                                        BlurRadius="3" 
+                                                        ShadowDepth="0" 
+                                                        Opacity="0.3"/>
+                                    </Border.Effect>
+                                </Border>
+                            </Border>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Download Progress Bar Style -->
+        <Style x:Key="DownloadProgressBarStyle" TargetType="ProgressBar">
+            <Setter Property="Background" Value="{StaticResource ProgressBackgroundColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource ProgressColor}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="{StaticResource WarmBrownColor}"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <Border x:Name="PART_Track" CornerRadius="10">
+                                <Border x:Name="PART_Indicator" 
+                                        Background="{TemplateBinding Foreground}" 
+                                        HorizontalAlignment="Left" 
+                                        CornerRadius="10">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#F7931E" 
+                                                        BlurRadius="5" 
+                                                        ShadowDepth="0" 
+                                                        Opacity="0.5"/>
+                                    </Border.Effect>
+                                </Border>
                             </Border>
                         </Border>
                     </ControlTemplate>
@@ -300,10 +356,12 @@
                     <!-- YouTube Player -->
                     <Border Grid.Row="1" 
                             Background="{StaticResource SurfaceColor}" 
-                            CornerRadius="8">
+                            BorderBrush="{StaticResource WarmBrownColor}"
+                            BorderThickness="2"
+                            CornerRadius="12">
                         <wv2:WebView2 x:Name="YouTubePlayer" 
                                       NavigationCompleted="YouTubePlayer_NavigationCompleted"
-                                      Margin="5"
+                                      Margin="8"
                                       HorizontalAlignment="Stretch"
                                       VerticalAlignment="Stretch"/>
                     </Border>
@@ -358,13 +416,63 @@
                                  TextWrapping="Wrap"/>
                     </ScrollViewer>
                     
-                    <!-- Progress Bar -->
-                    <ProgressBar x:Name="ProgressBar" 
-                                 Grid.Row="2" 
-                                 Style="{StaticResource ModernProgressBarStyle}"
-                                 Height="6" 
-                                 Margin="0,10,0,0" 
-                                 Visibility="Collapsed"/>
+                    <!-- Download Progress Section -->
+                    <Grid Grid.Row="2" Margin="0,10,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Progress Label -->
+                        <TextBlock x:Name="ProgressLabel" 
+                                   Grid.Row="0"
+                                   Text="Download Progress"
+                                   Style="{StaticResource SecondaryTextStyle}"
+                                   Margin="0,0,0,5"
+                                   Visibility="Collapsed"/>
+                        
+                        <!-- Progress Bar -->
+                        <ProgressBar x:Name="ProgressBar" 
+                                     Grid.Row="1" 
+                                     Style="{StaticResource DownloadProgressBarStyle}"
+                                     Margin="0,0,0,5" 
+                                     Visibility="Collapsed"/>
+                        
+                        <!-- Progress Text -->
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock x:Name="ProgressStatus" 
+                                       Grid.Column="0"
+                                       Text="Ready to download..."
+                                       Style="{StaticResource SecondaryTextStyle}"
+                                       FontSize="11"
+                                       Visibility="Collapsed"/>
+                            
+                            <TextBlock x:Name="ProgressSpeed" 
+                                       Grid.Column="1"
+                                       Text=""
+                                       Style="{StaticResource SecondaryTextStyle}"
+                                       FontSize="11"
+                                       Margin="10,0,0,0"
+                                       Visibility="Collapsed"/>
+                            
+                            <TextBlock x:Name="ProgressPercentage" 
+                                       Grid.Column="2"
+                                       Text="0%"
+                                       Style="{StaticResource SubtitleTextStyle}"
+                                       FontSize="12"
+                                       Foreground="{StaticResource ProgressColor}"
+                                       FontWeight="Bold"
+                                       Margin="10,0,0,0"
+                                       Visibility="Collapsed"/>
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
@@ -425,7 +533,7 @@
                 </Grid.RowDefinitions>
                 
                 <TextBlock Grid.Row="0" 
-                           Text="📥 Download Quality Selection" 
+                           Text="🐱 Download Quality Selection" 
                            Style="{StaticResource SubtitleTextStyle}"
                            Margin="0,0,0,15"/>
                 
